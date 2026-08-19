@@ -1,0 +1,275 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String            @id @default(auto()) @map("_id") @db.ObjectId
+  name           String?
+  email          String            @unique
+  hashedPassword String?
+  image          String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  memberships    WorkspaceMember[]
+  ownedSpaces    Workspace[]       @relation("WorkspaceOwner")
+  assignedRuns   ChecklistRun[]
+  notifications  Notification[]
+  accounts       Account[]
+  sessions       Session[]
+}
+
+model Account {
+  id                String  @id @default(auto()) @map("_id") @db.ObjectId
+  userId            String  @db.ObjectId
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  sessionToken String   @unique
+  userId       String   @db.ObjectId
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// Organization (kept as Workspace in DB)
+model Workspace {
+  id          String            @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  plan        String            @default("free")
+  ownerId     String            @db.ObjectId
+  owner       User              @relation("WorkspaceOwner", fields: [ownerId], references: [id])
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  members     WorkspaceMember[]
+  outlets     Outlet[]
+  sops        SOP[]
+  ingredients Ingredient[]
+  invites     Invite[]
+}
+
+model WorkspaceMember {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String    @db.ObjectId
+  workspaceId String    @db.ObjectId
+  role        String    @default("staff")
+  outletIds   String[]  @db.ObjectId
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, workspaceId])
+}
+
+model Invite {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  email       String
+  token       String    @unique
+  role        String    @default("staff")
+  outletIds   String[]  @db.ObjectId
+  workspaceId String    @db.ObjectId
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+  createdAt   DateTime  @default(now())
+}
+
+model Outlet {
+  id           String            @id @default(auto()) @map("_id") @db.ObjectId
+  name         String
+  slug         String            @unique
+  address      String?
+  city         String?
+  country      String?
+  timezone     String            @default("UTC")
+  currency     String            @default("USD")
+  isActive     Boolean           @default(true)
+  workspaceId  String            @db.ObjectId
+  workspace    Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  menuCategories MenuCategory[]
+  sops         SOP[]
+  checklistRuns ChecklistRun[]
+  ingredientStock IngredientStock[]
+  tables       RestaurantTable[]
+  financeEntries FinanceEntry[]
+  notifications Notification[]
+}
+
+model MenuCategory {
+  id        String     @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  sortOrder Int        @default(0)
+  outletId  String     @db.ObjectId
+  outlet    Outlet     @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  items     MenuItem[]
+}
+
+model MenuItem {
+  id          String       @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  description String?
+  price       Float
+  imageUrl    String?
+  isAvailable Boolean      @default(true)
+  categoryId  String       @db.ObjectId
+  category    MenuCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  recipeLines RecipeLine[]
+  tableOrderItems TableOrderItem[]
+}
+
+model Ingredient {
+  id          String            @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  unit        String            @default("kg")
+  workspaceId String            @db.ObjectId
+  workspace   Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  stock       IngredientStock[]
+  recipeLines RecipeLine[]
+}
+
+model IngredientStock {
+  id            String     @id @default(auto()) @map("_id") @db.ObjectId
+  outletId      String     @db.ObjectId
+  ingredientId  String     @db.ObjectId
+  quantity      Float      @default(0)
+  reorderLevel  Float      @default(10)
+  outlet        Outlet     @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  ingredient    Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+
+  @@unique([outletId, ingredientId])
+}
+
+model RecipeLine {
+  id           String     @id @default(auto()) @map("_id") @db.ObjectId
+  menuItemId   String     @db.ObjectId
+  ingredientId String     @db.ObjectId
+  quantity     Float
+  menuItem     MenuItem   @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  ingredient   Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+}
+
+model SOP {
+  id          String         @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  description String?
+  type        String         @default("prep")
+  steps       Json
+  workspaceId String         @db.ObjectId
+  outletId    String?        @db.ObjectId
+  createdById String         @db.ObjectId
+  workspace   Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  outlet      Outlet?        @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  runs        ChecklistRun[]
+}
+
+model ChecklistRun {
+  id           String          @id @default(auto()) @map("_id") @db.ObjectId
+  sopId        String          @db.ObjectId
+  outletId     String?         @db.ObjectId
+  assignedToId String          @db.ObjectId
+  status       String          @default("pending")
+  dueDate      DateTime?
+  completedAt  DateTime?
+  sop          SOP             @relation(fields: [sopId], references: [id], onDelete: Cascade)
+  outlet       Outlet?         @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  assignedTo   User            @relation(fields: [assignedToId], references: [id])
+  items        ChecklistItem[]
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+}
+
+model ChecklistItem {
+  id          String       @id @default(auto()) @map("_id") @db.ObjectId
+  runId       String       @db.ObjectId
+  stepIndex   Int
+  checked     Boolean      @default(false)
+  completedAt DateTime?
+  run         ChecklistRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+}
+
+model RestaurantTable {
+  id          String            @id @default(auto()) @map("_id") @db.ObjectId
+  label       String
+  capacity    Int               @default(4)
+  status      String            @default("available")
+  outletId    String            @db.ObjectId
+  outlet      Outlet            @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  allocations TableAllocation[]
+}
+
+model TableAllocation {
+  id         String          @id @default(auto()) @map("_id") @db.ObjectId
+  tableId    String          @db.ObjectId
+  guestName  String
+  guestCount Int             @default(2)
+  startTime  DateTime        @default(now())
+  endTime    DateTime?
+  status     String          @default("active")
+  table      RestaurantTable @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  order      TableOrder?
+}
+
+model TableOrder {
+  id           String           @id @default(auto()) @map("_id") @db.ObjectId
+  allocationId String           @unique @db.ObjectId
+  status       String           @default("open")
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  allocation   TableAllocation  @relation(fields: [allocationId], references: [id], onDelete: Cascade)
+  items        TableOrderItem[]
+}
+
+model TableOrderItem {
+  id         String     @id @default(auto()) @map("_id") @db.ObjectId
+  orderId    String     @db.ObjectId
+  menuItemId String?    @db.ObjectId
+  name       String
+  price      Float
+  quantity   Int        @default(1)
+  notes      String?
+  order      TableOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItem   MenuItem?  @relation(fields: [menuItemId], references: [id], onDelete: SetNull)
+}
+
+model FinanceEntry {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  outletId String   @db.ObjectId
+  type     String
+  amount   Float
+  category String
+  date     DateTime
+  note     String?
+  outlet   Outlet   @relation(fields: [outletId], references: [id], onDelete: Cascade)
+}
+
+model Notification {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  outletId  String?  @db.ObjectId
+  type      String
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  outlet    Outlet?  @relation(fields: [outletId], references: [id], onDelete: Cascade)
+}
