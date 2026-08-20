@@ -2,17 +2,20 @@
 
 import { useState } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AuthShell } from "@/components/brand/auth-shell";
 import { GOOGLE_AUTH_ENABLED } from "@/lib/env";
+import { getSafeCallbackUrl } from "@/lib/auth-redirect";
 import { toast } from "sonner";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = getSafeCallbackUrl(searchParams.get("callbackUrl"), "/dashboard");
   const [loading, setLoading] = useState(false);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -33,31 +36,31 @@ export default function LoginPage() {
       return;
     }
 
-    router.push("/dashboard");
+    router.push(callbackUrl);
   }
 
   return (
     <AuthShell title="Welcome back, chef!" subtitle="Log in to your RestoHub kitchen command center">
       <div className="space-y-4">
         {GOOGLE_AUTH_ENABLED && (
-        <Button
-          variant="outline"
-          className="w-full rounded-full border-secondary bg-secondary/20 hover:bg-secondary/40"
-          onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
-        >
-          Continue with Google
-        </Button>
+          <Button
+            variant="outline"
+            className="w-full rounded-full border-secondary bg-secondary/20 hover:bg-secondary/40"
+            onClick={() => signIn("google", { callbackUrl })}
+          >
+            Continue with Google
+          </Button>
         )}
 
         {GOOGLE_AUTH_ENABLED && (
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t border-border" />
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-border" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-card px-3 text-muted-foreground">or email</span>
+            </div>
           </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-card px-3 text-muted-foreground">or email</span>
-          </div>
-        </div>
         )}
 
         <form onSubmit={onSubmit} className="space-y-4">
@@ -76,7 +79,10 @@ export default function LoginPage() {
 
         <p className="text-center text-sm text-muted-foreground">
           New here?{" "}
-          <Link href="/signup" className="font-semibold text-primary hover:underline">
+          <Link
+            href={`/signup${searchParams.get("callbackUrl") ? `?callbackUrl=${encodeURIComponent(callbackUrl)}` : ""}`}
+            className="font-semibold text-primary hover:underline"
+          >
             Create free account
           </Link>
         </p>

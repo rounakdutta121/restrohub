@@ -12,8 +12,10 @@ import { ReadOnlyNotice } from "@/components/brand/role-badge";
 import { fetchJson } from "@/lib/fetch-json";
 import { formatQuantity } from "@/lib/units";
 import { RestoLoader } from "@/components/ui/resto-loader";
+import { RestoEmptyState } from "@/components/brand/page-header";
 import { DeleteButton, apiDelete } from "@/components/ui/delete-button";
 import { toast } from "sonner";
+import { toastApiError } from "@/lib/toast-errors";
 
 interface Ingredient {
   id: string;
@@ -92,6 +94,9 @@ export default function InventoryPage() {
       setNewIng({ name: "", unit: "kg" });
       load();
       toast.success(`Added "${name}" to your ingredient list`);
+    } else {
+      const data = await res.json().catch(() => ({}));
+      toastApiError(data.error);
     }
   }
 
@@ -144,9 +149,13 @@ export default function InventoryPage() {
 
   if (!outlet) {
     return (
-      <p className="py-10 text-center text-muted-foreground">
-        Pick an outlet from the top bar first.
-      </p>
+      <RestoEmptyState
+        icon="stock"
+        title="Add an outlet first"
+        description="Inventory is tracked per location. Create or select an outlet to manage stock."
+        actionHref="/dashboard/outlets"
+        actionLabel="Go to Outlets"
+      />
     );
   }
 

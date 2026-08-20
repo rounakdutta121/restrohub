@@ -72,7 +72,8 @@ export async function requireOutletAccess(
   if ("error" in auth) return auth;
 
   const role = auth.member.role as Role;
-  if (!ADMIN_ROLES.includes(role)) {
+  // Empty outletIds = access to every outlet in the org (default for invites)
+  if (!ADMIN_ROLES.includes(role) && auth.member.outletIds.length > 0) {
     const assigned = auth.member.outletIds.includes(outletId);
     if (!assigned) {
       return { error: NextResponse.json({ error: "No access to this outlet" }, { status: 403 }) };

@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -37,7 +36,7 @@ const services: {
       "One organization, many locations. Each outlet has its own address, currency, timezone, and operational data while sharing the same team and checklists.",
     details: [
       "Create outlets for each branch — Bengali Dhaba WB, your Mumbai flagship, a cloud kitchen, all under one roof.",
-      "Switch outlets instantly from the dashboard header without logging out.",
+      "Switch outlets instantly from the dashboard without logging out.",
       "Admins see every location; staff only see outlets they are assigned to.",
       "Delete or deactivate outlets when you consolidate — data stays scoped per location.",
     ],
@@ -117,7 +116,7 @@ const services: {
       "Log sales, rent, utilities, salaries, ingredients, and misc entries.",
       "Monthly income, expense, and profit summary cards.",
       "Home dashboard shows org-wide or outlet-scoped finance for managers.",
-      "Manual ledger today — built for operators who want clarity without accounting complexity.",
+      "Manual ledger today — clarity without accounting complexity.",
     ],
     who: "Managers and above. Hidden from floor staff for privacy.",
   },
@@ -130,7 +129,7 @@ const services: {
       "Roles: Owner (org creator), Admin, Manager, Staff — each with defined permissions.",
       "Invite links expire in 7 days; revoke pending invites anytime.",
       "Owner cannot be invited — only the person who creates the org holds it.",
-      "Plan limits on team size: Free 3, Pro 25, Business unlimited.",
+      "Unlimited team size during this free release.",
     ],
     who: "Admins and Owners manage team. See Docs for full permission matrix.",
   },
@@ -149,16 +148,16 @@ const services: {
   },
   {
     icon: "settings",
-    title: "Organizations & plans",
+    title: "Organizations",
     summary:
-      "Create multiple restaurant groups under one login. Upgrade plans as you add outlets and staff — demo billing built in.",
+      "Create multiple restaurant groups under one login. Add as many outlets and teammates as you need — fully free for this release.",
     details: [
-      "Free: 1 outlet, 3 staff, 20 menu items.",
-      "Pro: 5 outlets, 25 staff, unlimited menus and checklists.",
-      "Business: unlimited scale with full platform access.",
-      "Admins upgrade from Settings → Organizations → Upgrade plan.",
+      "Unlimited outlets, staff, menu items, and checklists.",
+      "Invite-only team access with role-based permissions.",
+      "Switch organizations from the dashboard anytime.",
+      "No payment, packs, or upgrade screens.",
     ],
-    who: "Owners delete orgs. Admins upgrade plans.",
+    who: "Owners delete orgs. Admins manage outlets and team.",
   },
 ];
 
@@ -171,76 +170,128 @@ export default function ServicesPage() {
           { name: "Restaurant Services", path: "/services" },
         ]}
       />
-      <section className="relative py-20 sm:py-28 overflow-hidden">
-        <Image src="/images/resto-operations.png" alt="Restaurant operations" fill className="object-cover" />
-        <div className="absolute inset-0 bg-[var(--restaurant-brown)]/85" />
-        <div className="container mx-auto px-4 relative z-10 text-white max-w-3xl">
-          <h1 className="resto-heading text-4xl sm:text-5xl font-bold mb-6">Our services</h1>
-          <p className="text-lg text-white/85 leading-relaxed">
+
+      {/* 1 — DARK: Hero */}
+      <section className="relative landing-section landing-dark !py-24 sm:!py-32">
+        <Image
+          src="/images/resto-operations.png"
+          alt="Restaurant operations software"
+          fill
+          className="object-cover opacity-55"
+          priority
+          sizes="100vw"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-[var(--restaurant-brown)]/80 via-[var(--restaurant-brown)]/55 to-[var(--restaurant-brown)]/25" />
+        <div className="landing-container max-w-3xl">
+          <p className="landing-eyebrow mb-5 bg-[var(--restaurant-yellow)] text-[var(--restaurant-brown)]">
+            Services
+          </p>
+          <h1 className="resto-heading text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-5 leading-tight">
+            Our services
+          </h1>
+          <p className="text-lg sm:text-xl text-white/80 leading-relaxed">
             RestoHub is not a single feature — it is a complete operating system for restaurants.
-            Below is every module we offer, who uses it, and why it matters for your business.
+            Every module, who uses it, and why it matters.
           </p>
         </div>
       </section>
 
-      <section className="py-16 bg-background">
-        <div className="container mx-auto px-4 max-w-4xl">
-          <div className="resto-card p-8 border-0 bg-secondary/10 mb-16">
-            <h2 className="resto-heading text-2xl font-bold mb-4 text-[var(--restaurant-brown)]">
-              One platform instead of many headaches
+      {/* 2 — LIGHT: Overview */}
+      <section className="landing-section landing-light">
+        <div className="landing-container max-w-3xl">
+          <p className="landing-eyebrow mb-4 bg-primary/10 text-primary">Overview</p>
+          <h2 className="resto-heading text-3xl sm:text-4xl font-bold mb-5 leading-tight">
+            One platform instead of many headaches
+          </h2>
+          <p className="text-[var(--restaurant-brown)]/70 leading-relaxed mb-4 text-base sm:text-lg">
+            Most restaurants stitch together WhatsApp, Excel, printed menus, and memory. RestoHub
+            replaces that patchwork with integrated modules that share the same outlets, team, and
+            menu data — so when a manager marks butter chicken unavailable, your QR menu, table
+            orders, and stock view all stay aligned.
+          </p>
+          <p className="text-[var(--restaurant-brown)]/70 leading-relaxed text-base sm:text-lg">
+            You can adopt one module at a time — start with QR menus, add stock when ready — but
+            the real power is when everything connects.
+          </p>
+        </div>
+      </section>
+
+      {/* 3 — DARK: Service modules */}
+      <section className="landing-section landing-dark">
+        <div className="landing-container">
+          <div className="max-w-2xl mb-10 sm:mb-12">
+            <p className="landing-eyebrow mb-4 bg-white/10 text-[var(--restaurant-yellow)]">Modules</p>
+            <h2 className="resto-heading text-3xl sm:text-4xl font-bold text-white mb-3 leading-tight">
+              Everything you get
             </h2>
-            <p className="text-muted-foreground leading-relaxed mb-4">
-              Most restaurants stitch together WhatsApp, Excel, printed menus, and memory.
-              RestoHub replaces that patchwork with integrated modules that share the same
-              outlets, team, and menu data — so when a manager marks butter chicken unavailable,
-              your QR menu, table orders, and stock view all stay aligned.
-            </p>
-            <p className="text-muted-foreground leading-relaxed">
-              You can adopt one module at a time — start with QR menus, add stock when ready —
-              but the real power is when everything connects.
+            <p className="text-white/60 text-base sm:text-lg">
+              Ten connected services — free during this release.
             </p>
           </div>
 
-          <div className="space-y-12">
+          <div className="grid gap-4 sm:gap-5">
             {services.map((s, i) => (
-              <article key={s.title} className="resto-card p-8 border-0 scroll-mt-24" id={s.title.toLowerCase().replace(/\s+/g, "-")}>
-                <div className="flex items-start gap-4 mb-4">
-                  <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 shrink-0">
-                    <RestoIcon name={s.icon} className="h-6 w-6 text-primary" />
+              <article
+                key={s.title}
+                id={s.title.toLowerCase().replace(/\s+/g, "-")}
+                className="landing-feature-dark scroll-mt-24"
+              >
+                <div className="flex flex-col sm:flex-row sm:items-start gap-4 sm:gap-5">
+                  <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--restaurant-yellow)]/15 shrink-0">
+                    <RestoIcon name={s.icon} className="h-6 w-6 text-[var(--restaurant-yellow)]" />
                   </span>
-                  <div>
-                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Service {i + 1}</span>
-                    <h2 className="resto-heading text-2xl font-bold text-[var(--restaurant-brown)]">{s.title}</h2>
+                  <div className="flex-1 min-w-0">
+                    <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/40">
+                      Service {String(i + 1).padStart(2, "0")}
+                    </span>
+                    <h3 className="resto-heading text-xl sm:text-2xl font-bold text-white mt-1 mb-2">
+                      {s.title}
+                    </h3>
+                    <p className="text-white/65 text-sm sm:text-base leading-relaxed mb-4">
+                      {s.summary}
+                    </p>
+                    <ul className="grid sm:grid-cols-2 gap-2 mb-4">
+                      {s.details.map((d) => (
+                        <li key={d} className="flex gap-2 text-sm text-white/55 leading-relaxed">
+                          <span className="text-[var(--restaurant-yellow)] shrink-0">•</span>
+                          <span>{d}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="text-xs sm:text-sm rounded-xl bg-white/[0.06] border border-white/10 px-4 py-3 text-white/70">
+                      <strong className="text-[var(--restaurant-yellow)]">Who uses it:</strong>{" "}
+                      {s.who}
+                    </p>
                   </div>
                 </div>
-                <p className="text-muted-foreground leading-relaxed mb-6">{s.summary}</p>
-                <ul className="space-y-2 mb-6">
-                  {s.details.map((d) => (
-                    <li key={d} className="flex gap-2 text-sm leading-relaxed">
-                      <span className="text-primary shrink-0">•</span>
-                      <span>{d}</span>
-                    </li>
-                  ))}
-                </ul>
-                <p className="text-sm bg-muted/50 rounded-lg px-4 py-3">
-                  <strong className="text-foreground">Who uses it:</strong> {s.who}
-                </p>
               </article>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="py-20 bg-secondary/15">
-        <div className="container mx-auto px-4 max-w-3xl text-center">
-          <h2 className="resto-heading text-3xl font-bold mb-4">Ready to see it live?</h2>
-          <p className="text-muted-foreground mb-8 leading-relaxed">
-            Create a free account and set up your first outlet in under ten minutes.
-            Questions? Email {SITE_CONTACT.email} or call {SITE_CONTACT.phoneDisplay}.
+      {/* 4 — LIGHT: CTA */}
+      <section className="landing-section landing-light">
+        <div className="landing-container max-w-3xl text-center">
+          <p className="landing-eyebrow mb-4 bg-primary/10 text-primary">Get started</p>
+          <h2 className="resto-heading text-3xl sm:text-4xl font-bold mb-4 leading-tight">
+            Ready to see it live?
+          </h2>
+          <p className="text-[var(--restaurant-brown)]/70 mb-8 leading-relaxed text-base sm:text-lg">
+            Create a free account and set up your first outlet in under ten minutes. Questions?
+            Email {SITE_CONTACT.email} or call {SITE_CONTACT.phoneDisplay}.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/signup"><Button size="lg" className="rounded-full px-8">Start free</Button></Link>
-            <Link href="/about"><Button size="lg" variant="outline" className="rounded-full px-8">About RestoHub</Button></Link>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Link href="/signup">
+              <Button size="lg" className="rounded-full px-8 w-full sm:w-auto">
+                Start free
+              </Button>
+            </Link>
+            <Link href="/about">
+              <Button size="lg" variant="outline" className="rounded-full px-8 w-full sm:w-auto">
+                About RestoHub
+              </Button>
+            </Link>
           </div>
         </div>
       </section>

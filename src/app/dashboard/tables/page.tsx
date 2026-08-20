@@ -232,8 +232,10 @@ export default function TablesPage() {
     return (
       <RestoEmptyState
         icon="tables"
-        title="Select an outlet"
-        description="Choose a location to manage tables and take orders."
+        title="Add an outlet first"
+        description="Tables and orders are per location. Create or select an outlet to continue."
+        actionHref="/dashboard/outlets"
+        actionLabel="Go to Outlets"
       />
     );
   }
@@ -242,22 +244,20 @@ export default function TablesPage() {
 
   return (
     <div className="space-y-6 w-full animate-fade-in">
-      <div className="relative">
         <RestoPageHeader
           title="Tables & Orders"
           subtitle={`${outlet.name} — seat guests and take orders from your menu`}
           icon="tables"
           image="/images/resto-hero.png"
+          action={
+            <Button
+              className="rounded-full bg-[var(--restaurant-yellow)] text-[var(--restaurant-brown)] hover:bg-[var(--restaurant-yellow)]/90 font-semibold shadow-md"
+              onClick={() => openSeatDialog()}
+            >
+              Seat Guests
+            </Button>
+          }
         />
-        <div className="absolute top-4 right-4 z-10">
-          <Button
-            className="rounded-full bg-[var(--restaurant-yellow)] text-[var(--restaurant-brown)] hover:bg-[var(--restaurant-yellow)]/90 font-semibold shadow-md"
-            onClick={() => openSeatDialog()}
-          >
-            Seat Guests
-          </Button>
-        </div>
-      </div>
 
       <Card className="resto-card border-0">
         <CardHeader>

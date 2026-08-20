@@ -11,10 +11,10 @@ export function SiteHeader() {
   const pathname = usePathname();
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border/60 bg-background/90 backdrop-blur-md">
-      <div className="container mx-auto flex items-center justify-between h-16 px-4 gap-4">
+    <header className="sticky top-0 z-50 border-b border-border/50 bg-[var(--restaurant-cream)]/85 backdrop-blur-xl">
+      <div className="container mx-auto flex items-center justify-between h-14 sm:h-16 px-4 sm:px-6 gap-3">
         <Logo />
-        <nav className="hidden md:flex items-center gap-1">
+        <nav className="hidden md:flex items-center gap-0.5">
           {PUBLIC_NAV.map((item) => {
             const active = pathname === item.href;
             return (
@@ -35,16 +35,21 @@ export function SiteHeader() {
         </nav>
         <div className="flex gap-2 shrink-0">
           <Link href="/login" className="hidden sm:inline-flex">
-            <Button variant="ghost" size="sm">Log in</Button>
+            <Button variant="ghost" size="sm" className="rounded-full">
+              Log in
+            </Button>
           </Link>
           <Link href="/signup">
-            <Button size="sm" className="rounded-full px-4 sm:px-6 shadow-md hover:scale-105 transition-transform">
+            <Button
+              size="sm"
+              className="rounded-full px-4 sm:px-6 shadow-md hover:scale-105 transition-transform"
+            >
               Get Started
             </Button>
           </Link>
         </div>
       </div>
-      <nav className="md:hidden flex overflow-x-auto gap-1 px-4 pb-2 border-t border-border/30">
+      <nav className="md:hidden flex overflow-x-auto gap-1 px-4 pb-2.5 scrollbar-none">
         {PUBLIC_NAV.map((item) => {
           const active = pathname === item.href;
           return (
@@ -53,7 +58,7 @@ export function SiteHeader() {
                 variant="ghost"
                 size="sm"
                 className={cn(
-                  "rounded-full text-xs shrink-0",
+                  "rounded-full text-xs shrink-0 h-8",
                   active && "bg-secondary/40 font-semibold"
                 )}
               >

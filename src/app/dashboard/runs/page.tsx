@@ -147,6 +147,8 @@ export default function RunsPage() {
         icon="runs"
         title="Set up your organization first"
         description="Create checklists, then assign runs to your team."
+        actionHref="/dashboard/setup"
+        actionLabel="Start setup"
       />
     );
   }

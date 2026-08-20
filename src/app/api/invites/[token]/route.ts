@@ -9,14 +9,26 @@ export async function GET(
   const { token } = await params;
   const invite = await prisma.invite.findUnique({
     where: { token },
-    include: { workspace: { select: { name: true } } },
+    include: { workspace: { select: { id: true, name: true } } },
   });
 
-  if (!invite || invite.acceptedAt || invite.expiresAt < new Date()) {
-    return NextResponse.json({ error: "Invalid or expired invite" }, { status: 404 });
+  if (!invite) {
+    return NextResponse.json({ error: "Invite not found" }, { status: 404 });
+  }
+  if (invite.acceptedAt) {
+    return NextResponse.json({ error: "This invite was already accepted" }, { status: 410 });
+  }
+  if (invite.expiresAt < new Date()) {
+    return NextResponse.json({ error: "This invite has expired" }, { status: 410 });
   }
 
-  return NextResponse.json(invite);
+  return NextResponse.json({
+    email: invite.email,
+    role: invite.role,
+    outletIds: invite.outletIds,
+    expiresAt: invite.expiresAt,
+    workspace: invite.workspace,
+  });
 }
 
 export async function POST(
@@ -27,14 +39,26 @@ export async function POST(
   const auth = await requireAuth();
   if ("error" in auth) return auth.error;
 
-  const invite = await prisma.invite.findUnique({ where: { token } });
-  if (!invite || invite.acceptedAt || invite.expiresAt < new Date()) {
-    return NextResponse.json({ error: "Invalid or expired invite" }, { status: 404 });
+  if (!auth.user.email) {
+    return NextResponse.json({ error: "Your account has no email address" }, { status: 400 });
   }
 
-  if (invite.email.toLowerCase() !== auth.user.email?.toLowerCase()) {
+  const invite = await prisma.invite.findUnique({ where: { token } });
+  if (!invite) {
+    return NextResponse.json({ error: "Invite not found" }, { status: 404 });
+  }
+  if (invite.acceptedAt) {
+    return NextResponse.json({ error: "This invite was already accepted" }, { status: 410 });
+  }
+  if (invite.expiresAt < new Date()) {
+    return NextResponse.json({ error: "This invite has expired" }, { status: 410 });
+  }
+
+  if (invite.email.toLowerCase() !== auth.user.email.toLowerCase()) {
     return NextResponse.json(
-      { error: "This invite was sent to a different email address" },
+      {
+        error: `This invite is for ${invite.email}. You’re signed in as ${auth.user.email}. Log out and use the invited email.`,
+      },
       { status: 403 }
     );
   }
@@ -45,7 +69,11 @@ export async function POST(
     },
   });
   if (existing) {
-    return NextResponse.json({ error: "Already a member" }, { status: 409 });
+    await prisma.invite.update({
+      where: { id: invite.id },
+      data: { acceptedAt: new Date() },
+    });
+    return NextResponse.json({ success: true, workspaceId: invite.workspaceId, alreadyMember: true });
   }
 
   await prisma.$transaction([

@@ -13,18 +13,26 @@ import {
 } from "@/lib/roles";
 
 export function usePermissions() {
-  const { organization } = useOrganization();
-  const role = (organization?.role ?? "staff") as Role;
+  const { organization, organizations, loading } = useOrganization();
+  const hasOrg = !loading && organizations.length > 0 && !!organization;
+  const role = (organization?.role ?? (hasOrg ? "staff" : "owner")) as Role;
 
   return {
     role,
-    roleLabel: ROLE_LABELS[role] ?? role,
-    roleDescription: roleDescription(role),
+    roleLabel: hasOrg ? (ROLE_LABELS[role] ?? role) : "Getting started",
+    roleDescription: hasOrg ? roleDescription(role) : "Finish setup to unlock your kitchen.",
     outletIds: organization?.outletIds ?? [],
-    isOrgAdmin: isOrgAdmin(role),
-    hasMinRole: (minRole: Role) => hasMinRole(role, minRole),
-    can: (capability: Capability) => can(role, capability),
-    canAccessNav: (href: string) => canAccessNav(role, href),
-    canEdit: can(role, "manageMenus"), // shorthand for any manager+ outlet edit
+    isOrgAdmin: hasOrg ? isOrgAdmin(role) : true,
+    hasMinRole: (minRole: Role) => (hasOrg ? hasMinRole(role, minRole) : true),
+    can: (capability: Capability) => (hasOrg ? can(role, capability) : true),
+    canAccessNav: (href: string) =>
+      hasOrg
+        ? canAccessNav(role, href)
+        : href === "/dashboard" ||
+          href === "/dashboard/setup" ||
+          href === "/dashboard/docs" ||
+          href === "/dashboard/settings",
+    canEdit: hasOrg ? can(role, "manageMenus") : true,
+    hasOrg,
   };
 }

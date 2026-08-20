@@ -89,8 +89,10 @@ export default function FinancePage() {
     return (
       <RestoEmptyState
         icon="finance"
-        title="Select an outlet"
-        description="Pick a location from the header to track income and expenses."
+        title="Add an outlet first"
+        description="Finance is tracked per location. Create or select an outlet from the header."
+        actionHref="/dashboard/outlets"
+        actionLabel="Go to Outlets"
       />
     );
   }

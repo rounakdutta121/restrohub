@@ -35,13 +35,13 @@ interface Outlet {
 
 export default function OutletsPage() {
   const { organization, refresh: refreshOrg } = useOrganization();
-  const { refresh: refreshOutlets } = useOutlet();
+  const { setOutlet, refresh: refreshOutlets } = useOutlet();
   const { can } = usePermissions();
   const canManage = can("manageOutlets");
   const [outlets, setOutlets] = useState<Outlet[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [form, setForm] = useState({ name: "", address: "", city: "", country: "", currency: "USD" });
+  const [form, setForm] = useState({ name: "", address: "", city: "", country: "", currency: "INR" });
 
   useEffect(() => {
     if (!organization) return;
@@ -61,14 +61,17 @@ export default function OutletsPage() {
     });
     const data = await res.json();
     if (!res.ok) {
-      toast.error(data.error);
+      const { toastApiError } = await import("@/lib/toast-errors");
+      toastApiError(data.error);
       return;
     }
     setOutlets((prev) => [...prev, data]);
     setOpen(false);
-    setForm({ name: "", address: "", city: "", country: "", currency: "USD" });
+    setForm({ name: "", address: "", city: "", country: "", currency: "INR" });
     refreshOrg();
-    toast.success("Outlet created");
+    await refreshOutlets();
+    setOutlet(data);
+    toast.success("Outlet created — selected in the header");
   }
 
   async function deleteOutlet(id: string, name: string) {
@@ -86,7 +89,9 @@ export default function OutletsPage() {
       <RestoEmptyState
         icon="outlets"
         title="Set up your organization first"
-        description="Create a restaurant group in Settings, then add your outlets here."
+        description="Create a restaurant group, then add your outlets here."
+        actionHref="/dashboard/setup"
+        actionLabel="Start setup"
       />
     );
   }
@@ -95,42 +100,47 @@ export default function OutletsPage() {
 
   return (
     <div className="space-y-6 w-full animate-fade-in">
-      <div className="relative">
-        <RestoPageHeader
-          title="Outlets"
-          subtitle="Every location in your restaurant family"
-          icon="outlets"
-          image="/images/resto-hero.png"
-        />
-        {canManage && (
-        <div className="absolute top-4 right-4 z-10">
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger className="inline-flex items-center justify-center rounded-full bg-[var(--restaurant-yellow)] px-5 py-2 text-sm font-semibold text-[var(--restaurant-brown)] hover:scale-105 transition-transform shadow-md">
-              + Add Outlet
-            </DialogTrigger>
-          <DialogContent>
-            <DialogHeader><DialogTitle>New Outlet</DialogTitle></DialogHeader>
-            <div className="space-y-3 pt-2">
-              <div><Label>Name</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
-              <div><Label>Address</Label><Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></div>
-              <div className="grid grid-cols-2 gap-2">
-                <div><Label>City</Label><Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} /></div>
-                <div><Label>Country</Label><Input value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })} /></div>
-              </div>
-              <div><Label>Currency</Label><Input value={form.currency} onChange={(e) => setForm({ ...form, currency: e.target.value })} /></div>
-              <Button className="w-full" onClick={createOutlet}>Create Outlet</Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-        </div>
-        )}
-      </div>
+      <RestoPageHeader
+        title="Outlets"
+        subtitle="Every location in your restaurant family"
+        icon="outlets"
+        image="/images/resto-hero.png"
+        action={
+          canManage ? (
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger className="inline-flex items-center justify-center rounded-full bg-[var(--restaurant-yellow)] px-5 py-2 text-sm font-semibold text-[var(--restaurant-brown)] hover:scale-105 transition-transform shadow-md">
+                + Add Outlet
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader><DialogTitle>New Outlet</DialogTitle></DialogHeader>
+                <div className="space-y-3 pt-2">
+                  <div><Label>Name</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
+                  <div><Label>Address</Label><Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div><Label>City</Label><Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} /></div>
+                    <div><Label>Country</Label><Input value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })} /></div>
+                  </div>
+                  <div><Label>Currency</Label><Input value={form.currency} onChange={(e) => setForm({ ...form, currency: e.target.value })} /></div>
+                  <Button className="w-full" onClick={createOutlet}>Create Outlet</Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          ) : undefined
+        }
+      />
 
       {outlets.length === 0 ? (
         <RestoEmptyState
           icon="location"
           title="No outlets yet"
           description="Add your first restaurant location — Mumbai, Dubai, or right around the corner."
+          action={
+            canManage ? (
+              <Button className="rounded-full px-6" onClick={() => setOpen(true)}>
+                + Add Outlet
+              </Button>
+            ) : undefined
+          }
         />
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">

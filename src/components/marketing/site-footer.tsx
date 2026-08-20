@@ -69,7 +69,7 @@ export function SiteFooter() {
             <li className="flex gap-2"><span className="text-[var(--restaurant-yellow)]">✓</span> Built for real kitchens</li>
             <li className="flex gap-2"><span className="text-[var(--restaurant-yellow)]">✓</span> Role-based team access</li>
             <li className="flex gap-2"><span className="text-[var(--restaurant-yellow)]">✓</span> INR & multi-currency</li>
-            <li className="flex gap-2"><span className="text-[var(--restaurant-yellow)]">✓</span> Free plan to start</li>
+            <li className="flex gap-2"><span className="text-[var(--restaurant-yellow)]">✓</span> Free for this release</li>
           </ul>
         </div>
       </div>

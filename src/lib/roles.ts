@@ -14,7 +14,7 @@ export const INVITABLE_ROLES: Role[] = ["staff", "manager", "admin"];
 
 export const ROLE_SUMMARIES: Record<Role, string> = {
   owner: "Full access. Assigned automatically to whoever creates the organization — not available via invite.",
-  admin: "Manage outlets, team, plan upgrades, and all outlet operations.",
+  admin: "Manage outlets, team, and all outlet operations.",
   manager: "Edit menus, stock, finance, tables, and checklists.",
   staff: "Run checklists, seat guests, and take table orders.",
 };
@@ -22,7 +22,6 @@ export const ROLE_SUMMARIES: Record<Role, string> = {
 /** Minimum role required for each capability */
 export const CAPABILITIES = {
   deleteOrg: "owner",
-  manageBilling: "admin",
   manageOutlets: "admin",
   manageTeam: "admin",
   viewTeam: "admin",
@@ -63,9 +62,9 @@ export function canAccessNav(role: string, href: string): boolean {
 export function roleDescription(role: Role): string {
   switch (role) {
     case "owner":
-      return "Full access including plan upgrades and deleting the organization.";
+      return "Full access including deleting the organization.";
     case "admin":
-      return "Manage outlets, team, plan upgrades, and all outlet operations.";
+      return "Manage outlets, team, and all outlet operations.";
     case "manager":
       return "Manage menus, stock, finance, tables, and checklists.";
     case "staff":

@@ -21,7 +21,7 @@ const sections: { id: string; label: string; icon: RestoIconName }[] = [
   { id: "finance", label: "Finance", icon: "finance" },
   { id: "team", label: "Team & invites", icon: "team" },
   { id: "notifications", label: "Notifications", icon: "bell" },
-  { id: "settings", label: "Settings & plans", icon: "settings" },
+  { id: "settings", label: "Settings", icon: "settings" },
   { id: "tips", label: "Tips & workflows", icon: "sparkle" },
 ];
 
@@ -179,11 +179,11 @@ export default function DocsPage() {
             <div className="rounded-lg border bg-secondary/10 p-4 space-y-0">
               <RoleRow
                 role="owner"
-                access="Full access — delete organization, upgrade plans, outlets, team, and all outlet operations."
+                access="Full access — delete organization, outlets, team, and all outlet operations."
               />
               <RoleRow
                 role="admin"
-                access="Manage outlets, invite team, upgrade plans, and all outlet operations. Cannot delete the organization."
+                access="Manage outlets, invite team, and all outlet operations. Cannot delete the organization."
               />
               <RoleRow
                 role="manager"
@@ -223,7 +223,7 @@ export default function DocsPage() {
                 "Currency is used on menus, table orders, and finance for that location.",
                 "Each outlet gets a unique public menu URL: /m/your-outlet-slug.",
                 "Select an outlet from the top bar before working on menus, stock, tables, or finance.",
-                "Plan limits apply — Free allows 1 outlet; upgrade under Settings if you need more.",
+                "Add as many outlets as you need — there are no plan limits in this release.",
               ]}
             />
           </DocSection>
@@ -441,7 +441,7 @@ export default function DocsPage() {
             </p>
           </DocSection>
 
-          <DocSection id="settings" title="Settings & plans" icon="settings">
+          <DocSection id="settings" title="Settings" icon="settings">
             <p>
               <strong className="text-foreground">Where:</strong>{" "}
               <FeatureLink href="/dashboard/settings" label="Settings" />.
@@ -451,42 +451,10 @@ export default function DocsPage() {
               restaurant groups, create new ones, or delete (owner only).
             </p>
             <p>
-              <strong className="text-foreground">Plan upgrades:</strong> Admins and owners see
-              Upgrade plan on each organization row. Choose Free, Pro, or Business (demo — no real
-              charges).
+              <strong className="text-foreground">Pricing:</strong> This initial release is
+              completely free — unlimited outlets, staff, menus, and checklists. No payment,
+              packs, or upgrades.
             </p>
-            <div className="rounded-lg border overflow-hidden text-xs">
-              <table className="w-full">
-                <thead className="bg-secondary/30">
-                  <tr>
-                    <th className="text-left p-2 font-semibold text-foreground">Plan</th>
-                    <th className="text-left p-2 font-semibold text-foreground">Outlets</th>
-                    <th className="text-left p-2 font-semibold text-foreground">Staff</th>
-                    <th className="text-left p-2 font-semibold text-foreground">Highlights</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border/40">
-                  <tr>
-                    <td className="p-2">Free</td>
-                    <td className="p-2">1</td>
-                    <td className="p-2">3</td>
-                    <td className="p-2">20 menu items, 5 checklists</td>
-                  </tr>
-                  <tr>
-                    <td className="p-2">Pro</td>
-                    <td className="p-2">5</td>
-                    <td className="p-2">25</td>
-                    <td className="p-2">Unlimited menus & checklists, QR menus</td>
-                  </tr>
-                  <tr>
-                    <td className="p-2">Business</td>
-                    <td className="p-2">Unlimited</td>
-                    <td className="p-2">Unlimited</td>
-                    <td className="p-2">Full inventory & finance, priority support</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
           </DocSection>
 
           <DocSection id="tips" title="Tips & daily workflows" icon="sparkle">

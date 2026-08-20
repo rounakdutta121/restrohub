@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireOutletAccess } from "@/lib/permissions";
-import { getPlanLimits } from "@/lib/billing";
 
 export async function GET(
   _req: Request,
@@ -36,14 +35,6 @@ export async function POST(
       data: { name: categoryName, sortOrder: sortOrder ?? 0, outletId },
     });
     return NextResponse.json(category);
-  }
-
-  const limits = getPlanLimits(auth.workspace.plan);
-  const itemCount = await prisma.menuItem.count({
-    where: { category: { outletId } },
-  });
-  if (itemCount >= limits.maxMenuItems) {
-    return NextResponse.json({ error: "Menu item limit reached. Upgrade plan." }, { status: 403 });
   }
 
   const item = await prisma.menuItem.create({

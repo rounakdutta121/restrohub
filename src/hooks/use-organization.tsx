@@ -29,20 +29,23 @@ export interface Outlet {
 interface OrgContextType {
   organization: Organization | null;
   organizations: Organization[];
+  loading: boolean;
   setOrganization: (org: Organization) => void;
-  refresh: () => void;
+  refresh: () => Promise<void>;
 }
 
 const OrgContext = createContext<OrgContextType>({
   organization: null,
   organizations: [],
+  loading: true,
   setOrganization: () => {},
-  refresh: () => {},
+  refresh: async () => {},
 });
 
 export function OrganizationProvider({ children }: { children: React.ReactNode }) {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [organization, setOrganizationState] = useState<Organization | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
     const data = await fetchJson<Organization[]>("/api/workspaces");
@@ -51,7 +54,11 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
       const saved = localStorage.getItem("activeOrgId");
       const found = saved ? data.find((o) => o.id === saved) : null;
       setOrganizationState(found || data[0] || null);
+    } else {
+      setOrganizations([]);
+      setOrganizationState(null);
     }
+    setLoading(false);
   }, []);
 
   useEffect(() => {
@@ -64,7 +71,7 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
   };
 
   return (
-    <OrgContext.Provider value={{ organization, organizations, setOrganization, refresh: load }}>
+    <OrgContext.Provider value={{ organization, organizations, loading, setOrganization, refresh: load }}>
       {children}
     </OrgContext.Provider>
   );
@@ -74,6 +81,5 @@ export function useOrganization() {
   return useContext(OrgContext);
 }
 
-// Backward compat alias
 export const WorkspaceProvider = OrganizationProvider;
 export const useWorkspace = useOrganization;

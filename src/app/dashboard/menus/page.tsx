@@ -12,8 +12,10 @@ import { ReadOnlyNotice } from "@/components/brand/role-badge";
 import { fetchJson } from "@/lib/fetch-json";
 import { formatCurrency } from "@/lib/currency";
 import { RestoLoader } from "@/components/ui/resto-loader";
+import { RestoEmptyState } from "@/components/brand/page-header";
 import { DeleteButton, apiDelete } from "@/components/ui/delete-button";
 import { toast } from "sonner";
+import { toastApiError } from "@/lib/toast-errors";
 import QRCode from "qrcode";
 
 interface MenuCategory {
@@ -44,6 +46,11 @@ export default function MenusPage() {
 
   useEffect(() => {
     if (!outlet || loading) return;
+    const itemCount = categories.reduce((n, c) => n + c.items.length, 0);
+    if (itemCount === 0) {
+      setQrDataUrl(null);
+      return;
+    }
 
     const url = `${window.location.origin}/m/${outlet.slug}`;
 
@@ -54,7 +61,7 @@ export default function MenusPage() {
     })
       .then(setQrDataUrl)
       .catch(() => toast.error("Could not generate QR code"));
-  }, [outlet, loading]);
+  }, [outlet, loading, categories]);
 
   async function addCategory() {
     if (!outlet || !catName) return;
@@ -80,7 +87,7 @@ export default function MenusPage() {
     });
     const data = await res.json();
     if (!res.ok) {
-      toast.error(data.error);
+      toastApiError(data.error);
       return;
     }
     setCategories((prev) =>
@@ -125,59 +132,86 @@ export default function MenusPage() {
   }
 
   if (!outlet) {
-    return <p className="py-10 text-center text-muted-foreground">Select an outlet to manage menus.</p>;
+    return (
+      <RestoEmptyState
+        icon="menus"
+        title="Add an outlet first"
+        description="Menus are per location. Create an outlet, then build categories and items."
+        actionHref="/dashboard/outlets"
+        actionLabel="Go to Outlets"
+      />
+    );
   }
 
   if (loading) return <RestoLoader message="Loading your menu..." />;
+
+  const itemCount = categories.reduce((n, c) => n + c.items.length, 0);
 
   return (
     <div className="space-y-6 w-full animate-fade-in">
       <div className="resto-card p-0 overflow-hidden">
         <div className="grid md:grid-cols-2 gap-0">
           <div className="relative h-40 md:h-auto min-h-[160px]">
-            <Image src="/images/resto-food-spread.png" alt="Menu" fill className="object-cover" />
+            <Image src="/images/resto-food-spread.png" alt="Menu" fill className="object-cover" sizes="(max-width: 768px) 100vw, 50vw" />
             <div className="absolute inset-0 bg-primary/30" />
           </div>
           <div className="p-6 flex flex-col justify-center">
             <h1 className="resto-heading text-2xl font-bold text-[var(--restaurant-brown)]">Menus</h1>
             <p className="text-sm text-muted-foreground">{outlet.name}</p>
-            <div className="mt-4 flex items-center gap-4">
-              <div className="text-center">
-                {qrDataUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={qrDataUrl}
-                    alt={`QR code for ${outlet.name} menu`}
-                    width={180}
-                    height={180}
-                    className="rounded-lg border-2 border-secondary shadow-md bg-white"
-                  />
-                ) : (
-                  <div className="w-[180px] h-[180px] rounded-lg border-2 border-secondary bg-white animate-shimmer" />
-                )}
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="mt-2 rounded-full"
-                  onClick={downloadQR}
-                  disabled={!qrDataUrl}
-                >
-                  Download QR
-                </Button>
+            <p className="text-xs text-muted-foreground mt-1">
+              Tip: add a category first, then menu items. Guests see prices in {outlet.currency}.
+            </p>
+            {itemCount > 0 ? (
+              <div className="mt-4 flex items-center gap-4">
+                <div className="text-center">
+                  {qrDataUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={qrDataUrl}
+                      alt={`QR code for ${outlet.name} menu`}
+                      width={180}
+                      height={180}
+                      className="rounded-lg border-2 border-secondary shadow-md bg-white"
+                    />
+                  ) : (
+                    <div className="w-[180px] h-[180px] rounded-lg border-2 border-secondary bg-white animate-shimmer" />
+                  )}
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="mt-2 rounded-full"
+                    onClick={downloadQR}
+                    disabled={!qrDataUrl}
+                  >
+                    Download QR
+                  </Button>
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  <p>Guests scan to view:</p>
+                  <a href={`/m/${outlet.slug}`} target="_blank" className="text-primary font-medium underline">
+                    /m/{outlet.slug}
+                  </a>
+                </div>
               </div>
-              <div className="text-xs text-muted-foreground">
-                <p>Guests scan to view:</p>
-                <a href={`/m/${outlet.slug}`} target="_blank" className="text-primary font-medium underline">
-                  /m/{outlet.slug}
-                </a>
+            ) : (
+              <div className="mt-4 rounded-xl border border-dashed border-[var(--restaurant-mustard)]/50 bg-[var(--restaurant-mustard)]/10 p-4 text-sm text-muted-foreground">
+                Add at least one menu item to unlock the guest QR code.
               </div>
-            </div>
+            )}
           </div>
         </div>
       </div>
 
       {!canEdit && (
         <ReadOnlyNotice message="Ask a manager to add or change menu items." />
+      )}
+
+      {categories.length === 0 && canEdit && (
+        <RestoEmptyState
+          icon="menus"
+          title="No menu categories yet"
+          description="Start with something simple like Starters, Mains, or Beverages."
+        />
       )}
 
       {canEdit && (

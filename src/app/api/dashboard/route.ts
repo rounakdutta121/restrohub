@@ -99,6 +99,18 @@ export async function GET(req: Request) {
     .filter((e) => e.type === "expense")
     .reduce((s, e) => s + e.amount, 0);
 
+  const [menuItemCount, memberCount] = await Promise.all([
+    prisma.menuItem.count({
+      where: {
+        category: {
+          outlet: { workspaceId },
+          ...(outletId ? { outletId } : {}),
+        },
+      },
+    }),
+    prisma.workspaceMember.count({ where: { workspaceId } }),
+  ]);
+
   return NextResponse.json({
     outlets,
     totalChecklists,
@@ -108,6 +120,8 @@ export async function GET(req: Request) {
     complianceRate,
     recentRuns,
     lowStockCount,
+    menuItemCount,
+    memberCount,
     ...(includeFinance
       ? {
           monthlyIncome,

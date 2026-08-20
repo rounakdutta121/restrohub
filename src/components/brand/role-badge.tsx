@@ -2,11 +2,21 @@
 
 import { Badge } from "@/components/ui/badge";
 import { usePermissions } from "@/hooks/use-permissions";
+import { cn } from "@/lib/utils";
 
-export function RoleBadge() {
-  const { roleLabel } = usePermissions();
+export function RoleBadge({ tone = "light" }: { tone?: "dark" | "light" }) {
+  const { roleLabel, hasOrg } = usePermissions();
+  if (!hasOrg) return null;
   return (
-    <Badge variant="outline" className="hidden sm:inline-flex text-[10px] uppercase tracking-wide border-white/30 text-white/90 bg-white/10">
+    <Badge
+      variant="outline"
+      className={cn(
+        "inline-flex text-[10px] uppercase tracking-wide",
+        tone === "dark"
+          ? "border-white/30 text-white/90 bg-white/10"
+          : "border-border text-muted-foreground bg-secondary/40"
+      )}
+    >
       {roleLabel}
     </Badge>
   );

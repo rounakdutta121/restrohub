@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RestoHub — Product Pitch</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --red: #c41e3a;
+      --red-dark: #9e1830;
+      --yellow: #f5c518;
+      --mustard: #d4a017;
+      --cream: #fff8eb;
+      --brown: #3d2314;
+      --muted: #6b5344;
+      --border: rgba(61, 35, 20, 0.12);
+      --shadow: 0 8px 32px rgba(61, 35, 20, 0.08);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    @page {
+      size: A4;
+      margin: 0;
+    }
+
+    body {
+      font-family: "DM Sans", system-ui, sans-serif;
+      color: var(--brown);
+      background: #e8e0d8;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .page {
+      width: 210mm;
+      min-height: 297mm;
+      margin: 0 auto 16px;
+      background: white;
+      position: relative;
+      overflow: hidden;
+      page-break-after: always;
+      break-after: page;
+    }
+
+    .page:last-child {
+      page-break-after: auto;
+      break-after: auto;
+    }
+
+    .heading {
+      font-family: "Playfair Display", Georgia, serif;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    /* ── Cover ── */
+    .cover {
+      background: linear-gradient(145deg, var(--brown) 0%, #2a160c 45%, var(--red-dark) 100%);
+      color: white;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 48px 52px;
+    }
+
+    .cover-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .logo-mark {
+      width: 56px;
+      height: 56px;
+      background: var(--red);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+    }
+
+    .logo-mark svg { width: 30px; height: 30px; }
+
+    .logo-text {
+      font-family: "Playfair Display", serif;
+      font-size: 28px;
+      font-weight: 700;
+    }
+
+    .logo-text span { color: var(--yellow); }
+
+    .cover-badge {
+      background: rgba(245, 197, 24, 0.15);
+      border: 1px solid rgba(245, 197, 24, 0.35);
+      color: var(--yellow);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 8px 16px;
+      border-radius: 999px;
+    }
+
+    .cover-hero {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 40px 0;
+    }
+
+    .cover-hero h1 {
+      font-size: 52px;
+      line-height: 1.06;
+      margin-bottom: 20px;
+      max-width: 90%;
+    }
+
+    .cover-hero h1 em {
+      font-style: normal;
+      color: var(--yellow);
+    }
+
+    .cover-hero p {
+      font-size: 18px;
+      line-height: 1.65;
+      opacity: 0.88;
+      max-width: 520px;
+    }
+
+    .cover-stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-top: 48px;
+    }
+
+    .stat {
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 16px;
+      padding: 20px 16px;
+      text-align: center;
+    }
+
+    .stat-num {
+      font-family: "Playfair Display", serif;
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--yellow);
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      opacity: 0.75;
+      line-height: 1.35;
+    }
+
+    .cover-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      font-size: 12px;
+      opacity: 0.65;
+      border-top: 1px solid rgba(255,255,255,0.12);
+      padding-top: 24px;
+    }
+
+    /* ── Inner pages ── */
+    .inner {
+      padding: 44px 52px 52px;
+      min-height: 297mm;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 36px;
+      padding-bottom: 16px;
+      border-bottom: 2px solid var(--cream);
+    }
+
+    .page-header .mini-logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: "Playfair Display", serif;
+      font-weight: 700;
+      font-size: 15px;
+    }
+
+    .page-header .mini-mark {
+      width: 28px;
+      height: 28px;
+      background: var(--red);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .page-header .mini-mark svg { width: 16px; height: 16px; }
+
+    .page-num {
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .section-label {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--red);
+      background: rgba(196, 30, 58, 0.08);
+      padding: 6px 12px;
+      border-radius: 999px;
+      margin-bottom: 12px;
+    }
+
+    h2.title {
+      font-size: 32px;
+      line-height: 1.15;
+      margin-bottom: 16px;
+      color: var(--brown);
+    }
+
+    .lead {
+      font-size: 15px;
+      line-height: 1.7;
+      color: var(--muted);
+      margin-bottom: 28px;
+      max-width: 95%;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      flex: 1;
+    }
+
+    .card {
+      background: var(--cream);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 22px 24px;
+      box-shadow: var(--shadow);
+    }
+
+    .card h3 {
+      font-family: "Playfair Display", serif;
+      font-size: 17px;
+      margin-bottom: 10px;
+      color: var(--brown);
+    }
+
+    .card p, .card li {
+      font-size: 12.5px;
+      line-height: 1.65;
+      color: var(--muted);
+    }
+
+    .card ul {
+      padding-left: 16px;
+      margin-top: 8px;
+    }
+
+    .card li { margin-bottom: 4px; }
+
+    .pain-card {
+      border-left: 4px solid var(--red);
+    }
+
+    .solution-card {
+      border-left: 4px solid var(--mustard);
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+
+    .feature {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 16px;
+    }
+
+    .feature-icon {
+      width: 36px;
+      height: 36px;
+      background: rgba(196, 30, 58, 0.1);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 12px;
+      font-size: 18px;
+    }
+
+    .feature h3 {
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      color: var(--brown);
+    }
+
+    .feature p {
+      font-size: 11px;
+      line-height: 1.55;
+      color: var(--muted);
+    }
+
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-top: 8px;
+    }
+
+    .plan {
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 24px 20px;
+      position: relative;
+    }
+
+    .plan.featured {
+      border-color: var(--red);
+      background: linear-gradient(180deg, rgba(196,30,58,0.04) 0%, white 100%);
+      box-shadow: 0 12px 40px rgba(196, 30, 58, 0.12);
+    }
+
+    .plan-badge {
+      position: absolute;
+      top: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--red);
+      color: white;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border-radius: 999px;
+    }
+
+    .plan-name {
+      font-family: "Playfair Display", serif;
+      font-size: 22px;
+      margin-bottom: 4px;
+    }
+
+    .plan-price {
+      font-size: 36px;
+      font-weight: 700;
+      color: var(--red);
+      line-height: 1;
+      margin: 12px 0 4px;
+    }
+
+    .plan-price span {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--muted);
+    }
+
+    .plan-desc {
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+
+    .plan ul {
+      list-style: none;
+      font-size: 11.5px;
+      line-height: 1.6;
+      color: var(--muted);
+    }
+
+    .plan li {
+      padding: 5px 0;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+    }
+
+    .plan li::before {
+      content: "✓";
+      color: var(--red);
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .roles-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      margin-top: 8px;
+    }
+
+    .roles-table th {
+      text-align: left;
+      padding: 10px 14px;
+      background: var(--brown);
+      color: white;
+      font-weight: 600;
+      font-size: 11px;
+      letter-spacing: 0.04em;
+    }
+
+    .roles-table th:first-child { border-radius: 10px 0 0 0; }
+    .roles-table th:last-child { border-radius: 0 10px 0 0; }
+
+    .roles-table td {
+      padding: 11px 14px;
+      border-bottom: 1px solid var(--border);
+      color: var(--muted);
+      vertical-align: top;
+    }
+
+    .roles-table tr:nth-child(even) td { background: var(--cream); }
+
+    .role-pill {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 999px;
+      background: rgba(196,30,58,0.1);
+      color: var(--red);
+    }
+
+    .flow {
+      display: flex;
+      align-items: stretch;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .flow-step {
+      flex: 1;
+      background: var(--cream);
+      border-radius: 14px;
+      padding: 16px 14px;
+      text-align: center;
+      position: relative;
+    }
+
+    .flow-step:not(:last-child)::after {
+      content: "→";
+      position: absolute;
+      right: -14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--red);
+      font-weight: 700;
+      font-size: 16px;
+      z-index: 1;
+    }
+
+    .flow-num {
+      width: 28px;
+      height: 28px;
+      background: var(--red);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      margin: 0 auto 10px;
+    }
+
+    .flow-step h4 {
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .flow-step p {
+      font-size: 10px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .values-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .value {
+      padding: 18px 20px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+    }
+
+    .value h3 {
+      font-family: "Playfair Display", serif;
+      font-size: 15px;
+      margin-bottom: 6px;
+    }
+
+    .value p {
+      font-size: 11.5px;
+      line-height: 1.6;
+      color: var(--muted);
+    }
+
+    /* ── CTA page ── */
+    .cta-page {
+      background: linear-gradient(160deg, var(--cream) 0%, white 40%, rgba(196,30,58,0.06) 100%);
+    }
+
+    .cta-box {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 20px 0;
+    }
+
+    .cta-box h2 {
+      font-size: 40px;
+      margin-bottom: 16px;
+      max-width: 480px;
+    }
+
+    .cta-box .lead {
+      max-width: 420px;
+      margin-bottom: 36px;
+    }
+
+    .contact-cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      width: 100%;
+      max-width: 480px;
+      margin-bottom: 32px;
+    }
+
+    .contact-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: var(--shadow);
+    }
+
+    .contact-card .label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .contact-card .value {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--red);
+      border: none;
+      padding: 0;
+    }
+
+    .cta-button {
+      display: inline-block;
+      background: var(--red);
+      color: white;
+      font-size: 14px;
+      font-weight: 700;
+      padding: 16px 40px;
+      border-radius: 999px;
+      text-decoration: none;
+      box-shadow: 0 8px 24px rgba(196, 30, 58, 0.3);
+    }
+
+    .cta-note {
+      margin-top: 28px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- PAGE 1: COVER -->
+  <section class="page cover">
+    <div class="cover-top">
+      <div class="logo">
+        <div class="logo-mark">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#fff8eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3v7"/>
+          </svg>
+        </div>
+        <div class="logo-text">Resto<span>Hub</span></div>
+      </div>
+      <div class="cover-badge">Product Pitch · 2026</div>
+    </div>
+
+    <div class="cover-hero">
+      <h1 class="heading">Run every outlet.<br/><em>Delight every guest.</em></h1>
+      <p>
+        RestoHub is the all-in-one restaurant operations platform — digital QR menus,
+        kitchen inventory, table orders, prep checklists, finance, and your entire team
+        in one warm, easy-to-use hub.
+      </p>
+      <div class="cover-stats">
+        <div class="stat">
+          <div class="stat-num">9+</div>
+          <div class="stat-label">Integrated modules in one platform</div>
+        </div>
+        <div class="stat">
+          <div class="stat-num">4</div>
+          <div class="stat-label">Role-based access levels</div>
+        </div>
+        <div class="stat">
+          <div class="stat-num">₹</div>
+          <div class="stat-label">Multi-currency including INR</div>
+        </div>
+        <div class="stat">
+          <div class="stat-num">Free</div>
+          <div class="stat-label">Start with no credit card</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cover-footer">
+      <span>Restaurant Operations, Made Lively</span>
+      <span>rounak153d@gmail.com · +91 98151 21578</span>
+    </div>
+  </section>
+
+  <!-- PAGE 2: PROBLEM & SOLUTION -->
+  <section class="page">
+    <div class="inner">
+      <div class="page-header">
+        <div class="mini-logo">
+          <div class="mini-mark">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#fff8eb" stroke-width="2.5" stroke-linecap="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3v7"/></svg>
+          </div>
+          RestoHub
+        </div>
+        <span class="page-num">02</span>
+      </div>
+
+      <span class="section-label">The Opportunity</span>
+      <h2 class="heading title">Restaurants deserve better than chaos</h2>
+      <p class="lead">
+        Owners told us the same story everywhere: menus stuck in PDFs, stock tracked in notebooks,
+        tasks scattered across WhatsApp, money buried in Excel. Nothing talks to anything else —
+        and enterprise software feels cold, expensive, and overbuilt for a dhaba or a growing chain.
+      </p>
+
+      <div class="two-col">
+        <div class="card pain-card">
+          <h3>The pain today</h3>
+          <ul>
+            <li>Reprinted menus every time a price changes</li>
+            <li>Last-minute market runs because stock wasn't tracked</li>
+            <li>Opening checklists lost in group chats</li>
+            <li>Table orders scribbled on paper, re-entered later</li>
+            <li>Finance split across outlets with no single view</li>
+            <li>Staff given full access — or locked out entirely</li>
+          </ul>
+        </div>
+        <div class="card solution-card">
+          <h3>The RestoHub answer</h3>
+          <ul>
+            <li>One hub for every outlet you operate</li>
+            <li>Live QR menus guests scan — no app download</li>
+            <li>Ingredient stock with low-level alerts</li>
+            <li>Prep, opening & closing checklists with accountability</li>
+            <li>Visual table board with in-house menu orders</li>
+            <li>Role-based team access — invite only, no random signups</li>
+          </ul>
+        </div>
+      </div>
+
+      <div style="margin-top: 28px;">
+        <span class="section-label">How it works</span>
+        <div class="flow">
+          <div class="flow-step">
+            <div class="flow-num">1</div>
+            <h4>Create your org</h4>
+            <p>Sign up free. Add outlets with currency & timezone.</p>
+          </div>
+          <div class="flow-step">
+            <div class="flow-num">2</div>
+            <h4>Build & invite</h4>
+            <p>Set menus, tables, stock. Invite staff by role.</p>
+          </div>
+          <div class="flow-step">
+            <div class="flow-num">3</div>
+            <h4>Run service</h4>
+            <p>QR menus live. Tables seated. Checklists done.</p>
+          </div>
+          <div class="flow-step">
+            <div class="flow-num">4</div>
+            <h4>See the picture</h4>
+            <p>Finance, alerts, and compliance in one dashboard.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PAGE 3: FEATURES 1 -->
+  <section class="page">
+    <div class="inner">
+      <div class="page-header">
+        <div class="mini-logo">
+          <div class="mini-mark"><svg viewBox="0 0 24 24" fill="none" stroke="#fff8eb" stroke-width="2.5" stroke-linecap="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3v7"/></svg></div>
+          RestoHub
+        </div>
+        <span class="page-num">03</span>
+      </div>
+
+      <span class="section-label">Platform</span>
+      <h2 class="heading title">Everything in one place</h2>
+      <p class="lead">From walk-in to walk-out — tools designed around how restaurants actually work, not how software vendors imagine they do.</p>
+
+      <div class="feature-grid">
+        <div class="feature">
+          <div class="feature-icon">🏪</div>
+          <h3>Multi-outlet management</h3>
+          <p>Mumbai, Kolkata, Dubai — one organization, many locations. Each outlet has its own currency, menus, stock, and tables. Switch instantly from the dashboard.</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">📱</div>
+          <h3>QR digital menus</h3>
+          <p>Beautiful mobile menus per outlet. Guests scan, browse, see live prices in local currency. Update once — every table tent reflects it instantly.</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">📦</div>
+          <h3>Inventory & stock alerts</h3>
+          <p>Track ingredients per outlet with reorder levels. Low-stock notifications land before Friday night rush turns into a market run.</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">✅</div>
+          <h3>Prep & maintenance checklists</h3>
+          <p>Opening, closing, prep, and equipment SOPs with ordered steps. Assign runs, track compliance, get overdue alerts.</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">🔄</div>
+          <h3>Checklist runs</h3>
+          <p>Turn templates into live runs. Tick steps on phone during service. Know exactly who completed what and when.</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">🪑</div>
+          <h3>Table allocation & orders</h3>
+          <p>Visual floor board. Seat guests, take orders from your live menu, add items mid-meal. Totals in outlet currency.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PAGE 4: FEATURES 2 + ROLES -->
+  <section class="page">
+    <div class="inner">
+      <div class="page-header">
+        <div class="mini-logo">
+          <div class="mini-mark"><svg viewBox="0 0 24 24" fill="none" stroke="#fff8eb" stroke-width="2.5" stroke-linecap="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3v7"/></svg></div>
+          RestoHub
+        </div>
+        <span class="page-num">04</span>
+      </div>
+
+      <div class="feature-grid" style="margin-bottom: 28px;">
+        <div class="feature">
+          <div class="feature-icon">💰</div>
+          <h3>Finance & ledger</h3>
+          <p>Income and expense tracking per outlet, per month — in INR, USD, or any outlet currency. Profit at a glance without accounting complexity.</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">👥</div>
+          <h3>Team & invite-only access</h3>
+          <p>No random signups to your data. Invite by email, assign role and outlets. Revoke access anytime. Plan limits scale with your crew.</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">🔔</div>
+          <h3>Notifications hub</h3>
+          <p>Low stock, overdue checklists, maintenance due — one inbox so managers react before guests notice. Less WhatsApp chaos.</p>
+        </div>
+      </div>
+
+      <span class="section-label">Security & roles</span>
+      <h2 class="heading title" style="font-size: 24px; margin-bottom: 12px;">Everyone sees exactly what they need</h2>
+
+      <table class="roles-table">
+        <thead>
+          <tr>
+            <th>Role</th>
+            <th>Access</th>
+            <th>Typical user</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="role-pill">Owner</span></td>
+            <td>Full access. Delete org. Auto-assigned to org creator — not invitable.</td>
+            <td>Restaurant founder / group head</td>
+          </tr>
+          <tr>
+            <td><span class="role-pill">Admin</span></td>
+            <td>Manage outlets, team, plan upgrades, all operations across locations.</td>
+            <td>Operations head, co-owner</td>
+          </tr>
+          <tr>
+            <td><span class="role-pill">Manager</span></td>
+            <td>Edit menus, stock, finance, tables, checklists. View team.</td>
+            <td>Outlet manager, head chef</td>
+          </tr>
+          <tr>
+            <td><span class="role-pill">Staff</span></td>
+            <td>Run checklists, seat guests, take table orders. No finance access.</td>
+            <td>Floor staff, servers, prep crew</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- PAGE 5: PRICING & VALUES -->
+  <section class="page">
+    <div class="inner">
+      <div class="page-header">
+        <div class="mini-logo">
+          <div class="mini-mark"><svg viewBox="0 0 24 24" fill="none" stroke="#fff8eb" stroke-width="2.5" stroke-linecap="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3v7"/></svg></div>
+          RestoHub
+        </div>
+        <span class="page-num">05</span>
+      </div>
+
+      <span class="section-label">Pricing</span>
+      <h2 class="heading title">Start free. Grow when you're ready.</h2>
+      <p class="lead">Transparent plans that match how restaurant groups actually scale — from a single dhaba to a multi-city chain.</p>
+
+      <div class="pricing-grid">
+        <div class="plan">
+          <div class="plan-name">Free</div>
+          <div class="plan-price">$0<span>/mo</span></div>
+          <div class="plan-desc">Perfect to try RestoHub with one location</div>
+          <ul>
+            <li>1 outlet</li>
+            <li>3 team members</li>
+            <li>20 menu items</li>
+            <li>5 checklists</li>
+            <li>QR menu included</li>
+          </ul>
+        </div>
+        <div class="plan featured">
+          <div class="plan-badge">Most popular</div>
+          <div class="plan-name">Pro</div>
+          <div class="plan-price">$9<span>/mo</span></div>
+          <div class="plan-desc">For growing restaurants with multiple branches</div>
+          <ul>
+            <li>5 outlets</li>
+            <li>25 team members</li>
+            <li>Unlimited menu items</li>
+            <li>Unlimited checklists</li>
+            <li>Full QR menus</li>
+          </ul>
+        </div>
+        <div class="plan">
+          <div class="plan-name">Business</div>
+          <div class="plan-price">$29<span>/mo</span></div>
+          <div class="plan-desc">Unlimited scale for restaurant groups</div>
+          <ul>
+            <li>Unlimited outlets</li>
+            <li>Unlimited staff</li>
+            <li>Full inventory & finance</li>
+            <li>Audit logs</li>
+            <li>Priority support</li>
+          </ul>
+        </div>
+      </div>
+
+      <div style="margin-top: 32px;">
+        <span class="section-label">Why RestoHub</span>
+        <div class="values-grid">
+          <div class="value">
+            <h3>Built for real kitchens</h3>
+            <p>Designed around Friday night rushes, monsoon shortages, and the owner who is also the cashier — not demo-perfect scenarios.</p>
+          </div>
+          <div class="value">
+            <h3>Clarity over complexity</h3>
+            <p>Every screen uses plain language — Stock, Prep, Tables — the same words your team already uses. No consultant required.</p>
+          </div>
+          <div class="value">
+            <h3>Trust through transparency</h3>
+            <p>Role-based permissions protect finance data. Guest menus are public by design — nothing else is.</p>
+          </div>
+          <div class="value">
+            <h3>Local first, global ready</h3>
+            <p>INR formatting, Indian phone support, and multi-outlet groups whether you run a dhaba in West Bengal or a chain across countries.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PAGE 6: CTA -->
+  <section class="page cta-page">
+    <div class="inner">
+      <div class="page-header">
+        <div class="mini-logo">
+          <div class="mini-mark"><svg viewBox="0 0 24 24" fill="none" stroke="#fff8eb" stroke-width="2.5" stroke-linecap="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3v7"/></svg></div>
+          RestoHub
+        </div>
+        <span class="page-num">06</span>
+      </div>
+
+      <div class="cta-box">
+        <span class="section-label">Get started</span>
+        <h2 class="heading">Your kitchen deserves better tools</h2>
+        <p class="lead">
+          Join restaurant operators who replaced chaos with clarity — and gave their guests
+          a smoother experience. Create your free account in minutes.
+        </p>
+
+        <div class="contact-cards">
+          <div class="contact-card">
+            <div class="label">Email</div>
+            <div class="value">rounak153d@gmail.com</div>
+          </div>
+          <div class="contact-card">
+            <div class="label">Phone</div>
+            <div class="value">+91 98151 21578</div>
+          </div>
+        </div>
+
+        <a class="cta-button" href="https://github.com/rounakdutta121/restrohub">Start free today →</a>
+
+        <p class="cta-note">
+          RestoHub · Restaurant Operations, Made Lively<br/>
+          Web platform · QR menus · Multi-outlet · INR-ready · Invite-only team access
+        </p>
+      </div>
+    </div>
+  </section>
+
+</body>
+</html>

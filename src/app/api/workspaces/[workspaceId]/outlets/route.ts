@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireOrgMember, slugify, isOrgAdmin } from "@/lib/permissions";
-import { getPlanLimits } from "@/lib/billing";
 
 export async function GET(
   _req: Request,
@@ -12,10 +11,11 @@ export async function GET(
   if ("error" in auth) return auth.error;
 
   const role = auth.member.role;
+  const restrictOutlets = !isOrgAdmin(role) && auth.member.outletIds.length > 0;
   const outlets = await prisma.outlet.findMany({
     where: {
       workspaceId,
-      ...(isOrgAdmin(role) ? {} : { id: { in: auth.member.outletIds } }),
+      ...(restrictOutlets ? { id: { in: auth.member.outletIds } } : {}),
     },
     orderBy: { name: "asc" },
   });
@@ -30,15 +30,6 @@ export async function POST(
   const { workspaceId } = await params;
   const auth = await requireOrgMember(workspaceId, "admin");
   if ("error" in auth) return auth.error;
-
-  const limits = getPlanLimits(auth.workspace.plan);
-  const count = await prisma.outlet.count({ where: { workspaceId } });
-  if (count >= limits.maxOutlets) {
-    return NextResponse.json(
-      { error: `Upgrade to add more than ${limits.maxOutlets} outlets` },
-      { status: 403 }
-    );
-  }
 
   const body = await req.json();
   const { name, address, city, country, timezone, currency } = body;

@@ -63,7 +63,8 @@ export default function ChecklistsPage() {
     });
     const data = await res.json();
     if (!res.ok) {
-      toast.error(data.error);
+      const { toastApiError } = await import("@/lib/toast-errors");
+      toastApiError(data.error);
       return;
     }
     setChecklists((prev) => [data, ...prev]);
@@ -86,6 +87,8 @@ export default function ChecklistsPage() {
         icon="prep"
         title="Set up your organization first"
         description="Create a restaurant group to build prep and maintenance checklists."
+        actionHref="/dashboard/setup"
+        actionLabel="Start setup"
       />
     );
   }

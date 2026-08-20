@@ -41,10 +41,33 @@ const values = [
 ];
 
 const timeline = [
-  { year: "The problem", text: "Restaurant owners told us the same story: menus in PDFs, stock in notebooks, tasks in WhatsApp, money in Excel. Nothing talked to anything else." },
-  { year: "The insight", text: "Hospitality software often feels cold and corporate. Restaurants are warm, human, urgent — tools should match that energy." },
-  { year: "RestoHub", text: "We built one hub — outlets, QR menus, inventory, tables with orders, checklists, finance, team roles — so operators finally have a single place to run the house." },
-  { year: "Today", text: "RestoHub grows with every outlet you add. Start free, invite your crew, and upgrade when your restaurant family outgrows the plan." },
+  {
+    year: "The problem",
+    text: "Restaurant owners told us the same story: menus in PDFs, stock in notebooks, tasks in WhatsApp, money in Excel. Nothing talked to anything else.",
+  },
+  {
+    year: "The insight",
+    text: "Hospitality software often feels cold and corporate. Restaurants are warm, human, urgent — tools should match that energy.",
+  },
+  {
+    year: "RestoHub",
+    text: "We built one hub — outlets, QR menus, inventory, tables with orders, checklists, finance, team roles — so operators finally have a single place to run the house.",
+  },
+  {
+    year: "Today",
+    text: "RestoHub grows with every outlet you add. Start free, invite your crew, and run every location from one hub — no paid packs for this release.",
+  },
+];
+
+const trustItems = [
+  "Invite-only access — strangers cannot browse your dashboard.",
+  "Role-based security — staff cannot see finance or delete menus.",
+  "Outlet-scoped data — Kolkata stock does not mix with Mumbai stock.",
+  "Owner protection — organization creator cannot be removed by mistake.",
+  "Clear privacy policy — we tell you exactly what we store.",
+  "Direct support — email and phone to real people, not ticket black holes.",
+  "Free release — unlimited outlets, staff, menus, and checklists.",
+  "No lock-in marketing — your Docs and workflows stay yours.",
 ];
 
 export default function AboutPage() {
@@ -56,63 +79,107 @@ export default function AboutPage() {
           { name: "About", path: "/about" },
         ]}
       />
-      <section className="relative py-20 sm:py-28 overflow-hidden">
-        <Image src="/images/resto-trust.png" alt="About RestoHub" fill className="object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[var(--restaurant-brown)]/95 via-[var(--restaurant-brown)]/75 to-[var(--restaurant-brown)]/50" />
-        <div className="container mx-auto px-4 relative z-10 text-white max-w-3xl pt-8">
-          <h1 className="resto-heading text-4xl sm:text-5xl font-bold mb-6">About RestoHub</h1>
-          <p className="text-lg text-white/85 leading-relaxed">
+
+      {/* 1 — DARK: Hero */}
+      <section className="relative landing-section landing-dark !py-24 sm:!py-32">
+        <Image
+          src="/images/resto-trust.png"
+          alt="About RestoHub"
+          fill
+          className="object-cover opacity-55"
+          priority
+          sizes="100vw"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-[var(--restaurant-brown)]/85 via-[var(--restaurant-brown)]/50 to-[var(--restaurant-brown)]/25" />
+        <div className="landing-container max-w-3xl pt-4">
+          <p className="landing-eyebrow mb-5 bg-[var(--restaurant-yellow)] text-[var(--restaurant-brown)]">
+            About
+          </p>
+          <h1 className="resto-heading text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-5 leading-tight">
+            About RestoHub
+          </h1>
+          <p className="text-lg sm:text-xl text-white/80 leading-relaxed">
             We exist because running a restaurant should feel like hospitality — not homework.
-            RestoHub gives owners, managers, and staff one trusted place to work together.
+            One trusted place for owners, managers, and staff to work together.
           </p>
         </div>
       </section>
 
-      <section className="py-20 bg-background">
-        <div className="container mx-auto px-4 max-w-6xl">
-          <div className="grid lg:grid-cols-2 gap-14 items-start mb-20">
+      {/* 2 — LIGHT: Mission */}
+      <section className="landing-section landing-light">
+        <div className="landing-container">
+          <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
             <div>
-              <h2 className="resto-heading text-3xl font-bold mb-6 text-[var(--restaurant-brown)]">Our mission</h2>
-              <p className="text-muted-foreground leading-relaxed mb-4">
-                RestoHub&apos;s mission is to give every restaurant — from a single-family dhaba to
-                a multi-city brand — the operational backbone that big chains take for granted,
-                without the enterprise price tag or six-month implementation.
+              <p className="landing-eyebrow mb-4 bg-primary/10 text-primary">Mission</p>
+              <h2 className="resto-heading text-3xl sm:text-4xl font-bold mb-5 leading-tight">
+                Our mission
+              </h2>
+              <p className="text-[var(--restaurant-brown)]/70 leading-relaxed mb-4 text-base sm:text-lg">
+                Give every restaurant — from a single-family dhaba to a multi-city brand — the
+                operational backbone that big chains take for granted, without the enterprise
+                price tag or six-month implementation.
               </p>
-              <p className="text-muted-foreground leading-relaxed mb-4">
-                We believe when back-of-house runs smoothly, front-of-house smiles more. When
-                managers see low stock before service, guests never hear &ldquo;sorry, that&apos;s
-                finished.&rdquo; When checklists are tracked, health inspections and brand standards
-                stop being panic events.
+              <p className="text-[var(--restaurant-brown)]/70 leading-relaxed mb-4 text-base sm:text-lg">
+                When back-of-house runs smoothly, front-of-house smiles more. When managers see
+                low stock before service, guests never hear &ldquo;sorry, that&apos;s finished.&rdquo;
               </p>
-              <p className="text-muted-foreground leading-relaxed">
-                That is why we integrated menus, stock, tables, tasks, money, and people into
-                one product instead of selling you ten integrations.
+              <p className="text-[var(--restaurant-brown)]/70 leading-relaxed text-base sm:text-lg">
+                That is why we integrated menus, stock, tables, tasks, money, and people into one
+                product instead of selling you ten integrations.
               </p>
             </div>
-            <div className="relative h-80 rounded-3xl overflow-hidden shadow-xl">
-              <Image src="/images/resto-kitchen.png" alt="Kitchen team" fill className="object-cover" />
+            <div className="relative aspect-[4/5] sm:aspect-[5/4] lg:aspect-[4/5] rounded-[1.75rem] overflow-hidden shadow-2xl ring-1 ring-[var(--restaurant-brown)]/10">
+              <Image
+                src="/images/resto-kitchen.png"
+                alt="Kitchen team"
+                fill
+                className="object-cover"
+                sizes="(max-width: 1024px) 100vw, 50vw"
+              />
             </div>
           </div>
+        </div>
+      </section>
 
-          <h2 className="resto-heading text-3xl font-bold text-center mb-12 text-[var(--restaurant-brown)]">What we stand for</h2>
-          <div className="grid sm:grid-cols-2 gap-6 mb-20">
+      {/* 3 — DARK: Values */}
+      <section className="landing-section landing-dark">
+        <div className="landing-container">
+          <div className="max-w-2xl mb-10 sm:mb-12">
+            <p className="landing-eyebrow mb-4 bg-white/10 text-[var(--restaurant-yellow)]">Values</p>
+            <h2 className="resto-heading text-3xl sm:text-4xl font-bold text-white leading-tight">
+              What we stand for
+            </h2>
+          </div>
+          <div className="grid sm:grid-cols-2 gap-4 sm:gap-5">
             {values.map((v) => (
-              <div key={v.title} className="resto-card p-6 border-0">
-                <h3 className="resto-heading font-bold text-lg mb-3">{v.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{v.body}</p>
+              <div key={v.title} className="landing-feature-dark">
+                <h3 className="resto-heading font-bold text-lg text-white mb-3">{v.title}</h3>
+                <p className="text-sm text-white/60 leading-relaxed">{v.body}</p>
               </div>
             ))}
           </div>
+        </div>
+      </section>
 
-          <h2 className="resto-heading text-3xl font-bold text-center mb-12 text-[var(--restaurant-brown)]">Our story</h2>
-          <div className="max-w-3xl mx-auto space-y-8">
+      {/* 4 — LIGHT: Story */}
+      <section className="landing-section landing-light">
+        <div className="landing-container max-w-3xl">
+          <p className="landing-eyebrow mb-4 bg-primary/10 text-primary">Story</p>
+          <h2 className="resto-heading text-3xl sm:text-4xl font-bold mb-10 leading-tight">
+            Our story
+          </h2>
+          <div className="space-y-8">
             {timeline.map((t) => (
-              <div key={t.year} className="flex gap-6">
-                <div className="shrink-0 w-28 text-right">
-                  <span className="text-sm font-bold text-primary">{t.year}</span>
+              <div key={t.year} className="flex flex-col sm:flex-row gap-3 sm:gap-6">
+                <div className="sm:w-32 shrink-0 sm:text-right">
+                  <span className="inline-block text-xs sm:text-sm font-bold text-primary bg-primary/10 rounded-full px-3 py-1">
+                    {t.year}
+                  </span>
                 </div>
-                <div className="border-l-2 border-secondary pl-6 pb-2">
-                  <p className="text-muted-foreground leading-relaxed">{t.text}</p>
+                <div className="sm:border-l-2 sm:border-[var(--restaurant-mustard)]/40 sm:pl-6">
+                  <p className="text-[var(--restaurant-brown)]/70 leading-relaxed text-base">
+                    {t.text}
+                  </p>
                 </div>
               </div>
             ))}
@@ -120,24 +187,22 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section className="py-20 bg-secondary/15 border-y border-border/40">
-        <div className="container mx-auto px-4 max-w-4xl">
-          <h2 className="resto-heading text-3xl font-bold text-center mb-8 text-[var(--restaurant-brown)]">
-            Why you can trust RestoHub
-          </h2>
-          <div className="grid sm:grid-cols-2 gap-6 text-sm">
-            {[
-              "Invite-only access — strangers cannot browse your dashboard.",
-              "Role-based security — staff cannot see finance or delete menus.",
-              "Outlet-scoped data — Kolkata stock does not mix with Mumbai stock.",
-              "Owner protection — organization creator cannot be removed by mistake.",
-              "Clear privacy policy — we tell you exactly what we store.",
-              "Direct support — email and phone to real people, not ticket black holes.",
-              "Free tier — try everything core before you pay a rupee.",
-              "No lock-in marketing — export your workflow knowledge via our Docs anytime.",
-            ].map((item) => (
-              <div key={item} className="flex gap-2 resto-card p-4 border-0">
-                <RestoIcon name="sparkle" className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+      {/* 5 — DARK: Trust */}
+      <section className="landing-section landing-dark">
+        <div className="landing-container">
+          <div className="max-w-2xl mb-10 sm:mb-12 mx-auto text-center">
+            <p className="landing-eyebrow mb-4 bg-white/10 text-[var(--restaurant-yellow)]">Trust</p>
+            <h2 className="resto-heading text-3xl sm:text-4xl font-bold text-white leading-tight">
+              Why you can trust RestoHub
+            </h2>
+          </div>
+          <div className="grid sm:grid-cols-2 gap-3 sm:gap-4 max-w-4xl mx-auto">
+            {trustItems.map((item) => (
+              <div
+                key={item}
+                className="flex gap-3 rounded-2xl border border-white/10 bg-white/[0.06] p-4 text-sm text-white/75"
+              >
+                <RestoIcon name="sparkle" className="h-4 w-4 text-[var(--restaurant-yellow)] shrink-0 mt-0.5" />
                 <span className="leading-relaxed">{item}</span>
               </div>
             ))}
@@ -145,30 +210,40 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section className="py-20 bg-background">
-        <div className="container mx-auto px-4 max-w-3xl text-center">
-          <h2 className="resto-heading text-3xl font-bold mb-4">Get in touch</h2>
-          <p className="text-muted-foreground mb-8 leading-relaxed">
-            Whether you are opening your first outlet or migrating a five-location group, we would
-            love to hear from you.
+      {/* 6 — LIGHT: Contact CTA */}
+      <section className="landing-section landing-light">
+        <div className="landing-container max-w-lg text-center">
+          <p className="landing-eyebrow mb-4 bg-primary/10 text-primary">Contact</p>
+          <h2 className="resto-heading text-3xl sm:text-4xl font-bold mb-4 leading-tight">
+            Get in touch
+          </h2>
+          <p className="text-[var(--restaurant-brown)]/70 mb-8 leading-relaxed">
+            Opening your first outlet or migrating a five-location group — we would love to hear
+            from you.
           </p>
-          <div className="resto-card p-8 border-0 inline-block text-left w-full max-w-md">
-            <p className="mb-4">
-              <span className="text-muted-foreground text-sm block">Email</span>
-              <a href={`mailto:${SITE_CONTACT.email}`} className="font-semibold text-primary hover:underline">
+          <div className="landing-feature-light text-left space-y-4 mb-6">
+            <p>
+              <span className="text-xs text-muted-foreground block mb-1">Email</span>
+              <a
+                href={`mailto:${SITE_CONTACT.email}`}
+                className="font-semibold text-primary hover:underline break-all"
+              >
                 {SITE_CONTACT.email}
               </a>
             </p>
-            <p className="mb-6">
-              <span className="text-muted-foreground text-sm block">Phone</span>
-              <a href={`tel:${SITE_CONTACT.phone}`} className="font-semibold text-primary hover:underline">
+            <p>
+              <span className="text-xs text-muted-foreground block mb-1">Phone</span>
+              <a
+                href={`tel:${SITE_CONTACT.phone}`}
+                className="font-semibold text-primary hover:underline"
+              >
                 {SITE_CONTACT.phoneDisplay}
               </a>
             </p>
-            <Link href="/signup">
-              <Button className="w-full rounded-full">Create free account</Button>
-            </Link>
           </div>
+          <Link href="/signup">
+            <Button className="w-full sm:w-auto rounded-full px-8 h-11">Create free account</Button>
+          </Link>
         </div>
       </section>
     </SiteShell>

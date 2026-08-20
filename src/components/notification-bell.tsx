@@ -57,10 +57,10 @@ export function NotificationBell() {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger className="relative p-2 rounded-full hover:bg-white/10 cursor-pointer text-white/90">
+      <DropdownMenuTrigger className="relative p-2 rounded-full hover:bg-muted cursor-pointer text-foreground/80">
         <Bell className="h-5 w-5" />
         {unread > 0 && (
-          <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs bg-[var(--restaurant-yellow)] text-[var(--restaurant-brown)] border-0">
+          <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs bg-primary text-primary-foreground border-0">
             {unread}
           </Badge>
         )}

@@ -33,7 +33,7 @@ export const RESTAURANT_KEYWORDS = [
   "prep checklist kitchen",
   "low stock alerts restaurant",
   "restaurant team invites",
-  "INR restaurant billing",
+  "INR restaurant finance",
 ] as const;
 
 export function getSiteUrl(): string {
@@ -164,7 +164,7 @@ export function softwareApplicationJsonLd() {
       "@type": "Offer",
       price: "0",
       priceCurrency: "USD",
-      description: "Free plan with 1 outlet and QR menu",
+      description: "Free during initial release — unlimited outlets, staff, and menus",
     },
     featureList: [
       "Multi-outlet restaurant management",
@@ -240,7 +240,7 @@ export const HOME_FAQS = [
   {
     question: "Is RestoHub free for restaurants?",
     answer:
-      "RestoHub offers a free plan with one outlet and QR menu access. Pro and Business plans add more outlets, team members, and advanced features — upgrade anytime from Settings.",
+      "Yes. For this initial release RestoHub is completely free — unlimited outlets, staff, menu items, and checklists. No payment, packs, or upgrades required.",
   },
   {
     question: "Does RestoHub work for Indian restaurants with INR pricing?",
