@@ -47,6 +47,7 @@ const kitchenNav: NavItem[] = [
 ];
 
 const manageNav: NavItem[] = [
+  { href: "/dashboard/analytics", label: "Analytics", icon: "chart" },
   { href: "/dashboard/finance", label: "Finance", icon: "finance", needsOutlet: true },
   { href: "/dashboard/team", label: "Team", icon: "team" },
   { href: "/dashboard/notifications", label: "Alerts", icon: "bell" },
@@ -65,6 +66,7 @@ const mobileMore: NavItem[] = [
   { href: "/dashboard/checklists", label: "Checklists", icon: "prep" },
   { href: "/dashboard/runs", label: "Runs", icon: "runs" },
   { href: "/dashboard/inventory", label: "Inventory", icon: "stock", needsOutlet: true },
+  { href: "/dashboard/analytics", label: "Analytics", icon: "chart" },
   { href: "/dashboard/finance", label: "Finance", icon: "finance", needsOutlet: true },
   { href: "/dashboard/team", label: "Team", icon: "team" },
   { href: "/dashboard/notifications", label: "Alerts", icon: "bell" },

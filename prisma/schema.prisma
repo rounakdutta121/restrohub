@@ -21,6 +21,10 @@ model User {
   notifications  Notification[]
   accounts       Account[]
   sessions       Session[]
+  closedOrders   TableOrder[]      @relation("OrderClosedBy")
+  financeEntries FinanceEntry[]    @relation("FinanceCreatedBy")
+  stockMovements StockMovement[]   @relation("StockMovedBy")
+  auditLogs      AuditLog[]        @relation("AuditActor")
 }
 
 model Account {
@@ -111,6 +115,8 @@ model Outlet {
   tables       RestaurantTable[]
   financeEntries FinanceEntry[]
   notifications Notification[]
+  stockMovements StockMovement[]
+  auditLogs    AuditLog[]
 }
 
 model MenuCategory {
@@ -155,6 +161,20 @@ model IngredientStock {
   ingredient    Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
 
   @@unique([outletId, ingredientId])
+}
+
+model StockMovement {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  outletId     String   @db.ObjectId
+  ingredientId String   @db.ObjectId
+  quantity     Float
+  type         String
+  orderId      String?  @db.ObjectId
+  note         String?
+  createdById  String?  @db.ObjectId
+  createdAt    DateTime @default(now())
+  outlet       Outlet   @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  createdBy    User?    @relation("StockMovedBy", fields: [createdById], references: [id], onDelete: SetNull)
 }
 
 model RecipeLine {
@@ -230,13 +250,21 @@ model TableAllocation {
 }
 
 model TableOrder {
-  id           String           @id @default(auto()) @map("_id") @db.ObjectId
-  allocationId String           @unique @db.ObjectId
-  status       String           @default("open")
-  createdAt    DateTime         @default(now())
-  updatedAt    DateTime         @updatedAt
-  allocation   TableAllocation  @relation(fields: [allocationId], references: [id], onDelete: Cascade)
-  items        TableOrderItem[]
+  id             String           @id @default(auto()) @map("_id") @db.ObjectId
+  allocationId   String           @unique @db.ObjectId
+  status         String           @default("open")
+  subtotal       Float            @default(0)
+  paidAt         DateTime?
+  voidedAt       DateTime?
+  closeReason    String?
+  paymentMethod  String?
+  closedById     String?          @db.ObjectId
+  financeEntryId String?          @db.ObjectId
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  allocation     TableAllocation  @relation(fields: [allocationId], references: [id], onDelete: Cascade)
+  closedBy       User?            @relation("OrderClosedBy", fields: [closedById], references: [id], onDelete: SetNull)
+  items          TableOrderItem[]
 }
 
 model TableOrderItem {
@@ -247,19 +275,42 @@ model TableOrderItem {
   price      Float
   quantity   Int        @default(1)
   notes      String?
+  voided     Boolean    @default(false)
   order      TableOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
   menuItem   MenuItem?  @relation(fields: [menuItemId], references: [id], onDelete: SetNull)
 }
 
 model FinanceEntry {
-  id       String   @id @default(auto()) @map("_id") @db.ObjectId
-  outletId String   @db.ObjectId
-  type     String
-  amount   Float
-  category String
-  date     DateTime
-  note     String?
-  outlet   Outlet   @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  id              String    @id @default(auto()) @map("_id") @db.ObjectId
+  outletId        String    @db.ObjectId
+  type            String
+  amount          Float
+  category        String
+  date            DateTime
+  note            String?
+  sourceType      String    @default("manual")
+  sourceId        String?
+  createdById     String?   @db.ObjectId
+  voidedAt        DateTime?
+  reversedEntryId String?   @db.ObjectId
+  outlet          Outlet    @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  createdBy       User?     @relation("FinanceCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+}
+
+model AuditLog {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  workspaceId String   @db.ObjectId
+  outletId    String?  @db.ObjectId
+  actorId     String   @db.ObjectId
+  action      String
+  entityType  String
+  entityId    String
+  before      Json?
+  after       Json?
+  note        String?
+  createdAt   DateTime @default(now())
+  actor       User     @relation("AuditActor", fields: [actorId], references: [id], onDelete: Cascade)
+  outlet      Outlet?  @relation(fields: [outletId], references: [id], onDelete: Cascade)
 }
 
 model Notification {

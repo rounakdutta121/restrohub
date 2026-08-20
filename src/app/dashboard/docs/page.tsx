@@ -19,6 +19,7 @@ const sections: { id: string; label: string; icon: RestoIconName }[] = [
   { id: "runs", label: "Runs", icon: "runs" },
   { id: "tables", label: "Tables & orders", icon: "tables" },
   { id: "finance", label: "Finance", icon: "finance" },
+  { id: "analytics", label: "Analytics", icon: "chart" },
   { id: "team", label: "Team & invites", icon: "team" },
   { id: "notifications", label: "Notifications", icon: "bell" },
   { id: "settings", label: "Settings", icon: "settings" },
@@ -131,8 +132,9 @@ export default function DocsPage() {
                 { icon: "menus" as const, label: "Digital menus + QR for guests" },
                 { icon: "stock" as const, label: "Ingredient & stock tracking" },
                 { icon: "prep" as const, label: "Prep & maintenance checklists" },
-                { icon: "tables" as const, label: "Table seating & in-house orders" },
-                { icon: "finance" as const, label: "Income & expense ledger" },
+                { icon: "tables" as const, label: "Table seating & paid orders" },
+                { icon: "finance" as const, label: "Auto sales + manual ledger" },
+                { icon: "chart" as const, label: "Owner analytics & charts" },
                 { icon: "team" as const, label: "Role-based team access" },
               ].map((f) => (
                 <div
@@ -273,13 +275,15 @@ export default function DocsPage() {
                 "Step 1 — Add an ingredient once for the whole business (name + unit, e.g. flour in kg).",
                 "Step 2 — Select that ingredient and set how much you have at this outlet.",
                 "Set a minimum (reorder) level — you get a low-stock notification when quantity drops below it.",
-                "Update quantities whenever you receive a delivery or use stock.",
+                "Add recipe lines: link each menu item to ingredients + qty per serving.",
+                "On Settle & pay, recipe quantities deduct automatically. Walkouts can deduct as waste.",
                 "Use units like kg, litres, or pieces — do not combine numbers into the unit field.",
               ]}
             />
             <p>
               The Home dashboard shows a low-stock count for the selected outlet. Check{" "}
               <FeatureLink href="/dashboard/notifications" label="Notifications" /> for alerts.
+              Analytics flags when recipes are incomplete (COGS not estimated).
             </p>
           </DocSection>
 
@@ -346,7 +350,7 @@ export default function DocsPage() {
             </p>
             <p>
               <strong className="text-foreground">Who:</strong> Managers add/remove table
-              definitions. All staff can seat guests and manage orders.
+              definitions. All staff can seat guests and manage orders. Managers can comp or void.
             </p>
             <p>
               <strong className="text-foreground">Setup (managers):</strong>
@@ -363,13 +367,19 @@ export default function DocsPage() {
             <StepList
               items={[
                 "Click Seat Guests or Seat & order on an available table.",
-                "Enter guest name and party size.",
-                "Optionally add menu items from your outlet menu to the cart.",
-                "Confirm — table becomes occupied; order total is shown on the card.",
-                "For occupied tables: Add menu items to append to the order, or Free table when guests leave.",
-                "Orders are optional — you can seat guests without ordering.",
+                "Enter guest name and party size; optionally add menu items.",
+                "For occupied tables: Add menu items to the open order.",
+                "Settle & pay — guests paid. This posts income and counts as a successful table turn.",
+                "Cancel seating — wrong table / left before ordering. No income, no turn.",
+                "Walkout / unpaid — bill not collected. No income, no turn. Optionally deduct stock as waste.",
+                "Comp (manager) — complimentary meal. No income; logged separately in analytics.",
               ]}
             />
+            <p>
+              Only <strong className="text-foreground">Settle & pay</strong> counts toward revenue
+              and successful turns. Mistakes after payment are fixed by voiding the bill in
+              Analytics (manager).
+            </p>
           </DocSection>
 
           <DocSection id="finance" title="Finance" icon="finance">
@@ -383,21 +393,37 @@ export default function DocsPage() {
               staff.
             </p>
             <p>
-              Manual ledger — log income and expenses per outlet, per month.
+              Table sales auto-post when you Settle &amp; pay. You can still add manual income and
+              expenses (rent, salaries, catering, etc.).
             </p>
             <StepList
               items={[
-                "Select outlet → Add Entry.",
-                "Choose type (income or expense), amount, category, date, and optional note.",
+                "Paid table bills appear as Table sale entries (cannot delete — void the order instead).",
+                "Add Entry for manual income/expense: amount, category, date, note.",
                 "Categories include sales, rent, utilities, salaries, ingredients, misc.",
-                "Summary cards show monthly income, expense, and profit.",
-                "Delete entries if entered by mistake (managers only).",
+                "Summary cards show monthly income, expense, and profit (voided sales excluded).",
               ]}
             />
+          </DocSection>
+
+          <DocSection id="analytics" title="Analytics" icon="chart">
             <p>
-              This is a demo ledger — connect a payment provider in a future release for
-              automatic sales sync.
+              <strong className="text-foreground">Where:</strong>{" "}
+              <FeatureLink href="/dashboard/analytics" label="Analytics" />.
             </p>
+            <p>
+              <strong className="text-foreground">Who:</strong> Managers and above.
+            </p>
+            <StepList
+              items={[
+                "Filter by date range and outlet.",
+                "KPIs: daily revenue, period sales, profit, covers, turns, avg check, growth vs prior period.",
+                "Charts: revenue over time, income vs expense, peak hours, top items.",
+                "Outlet and per-table breakdowns.",
+                "Integrity strip shows walkouts, voids, cancels, and comps excluded from revenue.",
+                "Drill into paid visits; managers can void a bill (reverses income and restocks).",
+              ]}
+            />
           </DocSection>
 
           <DocSection id="team" title="Team & invites" icon="team">
@@ -469,8 +495,9 @@ export default function DocsPage() {
               availability if needed.
             </p>
             <p>
-              <strong className="text-foreground">Closing shift:</strong> Free all tables →
-              complete closing checklist → log daily sales and expenses in Finance.
+              <strong className="text-foreground">Closing shift:</strong> Settle &amp; pay
+              remaining tables (or cancel/walkout as needed) → complete closing checklist → review
+              Analytics and add non-table expenses in Finance.
             </p>
             <p>
               <strong className="text-foreground">Multi-outlet groups:</strong> Switch outlet in

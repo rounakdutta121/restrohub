@@ -92,10 +92,13 @@ export async function GET(req: Request) {
       })
     : [];
 
-  const monthlyIncome = financeEntries
+  // Filter in JS: Mongo docs may omit voidedAt (missing ≠ null in Prisma queries)
+  const activeFinance = financeEntries.filter((e) => !e.voidedAt);
+
+  const monthlyIncome = activeFinance
     .filter((e) => e.type === "income")
     .reduce((s, e) => s + e.amount, 0);
-  const monthlyExpense = financeEntries
+  const monthlyExpense = activeFinance
     .filter((e) => e.type === "expense")
     .reduce((s, e) => s + e.amount, 0);
 

@@ -19,10 +19,10 @@ import { DeleteButton, apiDelete } from "@/components/ui/delete-button";
 import {
   MenuOrderPicker,
   GuestFields,
-  orderTotal,
   type MenuCategory,
   type CartLine,
 } from "@/components/tables/menu-order-picker";
+import { orderSubtotal } from "@/lib/order-math";
 import { toast } from "sonner";
 import { formatCurrency } from "@/lib/currency";
 
@@ -31,13 +31,14 @@ interface OrderItem {
   name: string;
   price: number;
   quantity: number;
+  voided?: boolean;
 }
 
 interface Allocation {
   id: string;
   guestName: string;
   guestCount: number;
-  order?: { id: string; items: OrderItem[] } | null;
+  order?: { id: string; items: OrderItem[]; status?: string } | null;
 }
 
 interface Table {
@@ -48,12 +49,15 @@ interface Table {
   allocations: Allocation[];
 }
 
+type CloseMode = "settle" | "cancel" | "walkout" | "comp" | null;
+
 const emptyGuest = { tableId: "", guestName: "", guestCount: "2" };
 
 export default function TablesPage() {
   const { outlet } = useOutlet();
   const { can } = usePermissions();
   const canManageSetup = can("manageTableSetup");
+  const canFinance = can("manageFinance");
   const [tables, setTables] = useState<Table[]>([]);
   const [menu, setMenu] = useState<MenuCategory[]>([]);
   const [loading, setLoading] = useState(true);
@@ -65,6 +69,11 @@ export default function TablesPage() {
   const [activeAllocation, setActiveAllocation] = useState<Allocation | null>(null);
   const [addCart, setAddCart] = useState<CartLine[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [closeMode, setCloseMode] = useState<CloseMode>(null);
+  const [closeTable, setCloseTable] = useState<Table | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState("cash");
+  const [closeReason, setCloseReason] = useState("");
+  const [recordWaste, setRecordWaste] = useState(false);
 
   function load() {
     if (!outlet) return;
@@ -99,6 +108,14 @@ export default function TablesPage() {
     setActiveAllocation(allocation);
     setAddCart([]);
     setOrderOpen(true);
+  }
+
+  function openClose(table: Table, mode: CloseMode) {
+    setCloseTable(table);
+    setCloseMode(mode);
+    setPaymentMethod("cash");
+    setCloseReason("");
+    setRecordWaste(false);
   }
 
   async function createTable() {
@@ -198,15 +215,52 @@ export default function TablesPage() {
     }
   }
 
-  async function freeTable(tableId: string) {
-    if (!outlet) return;
-    await fetch(`/api/outlets/${outlet.id}/tables`, {
+  async function confirmClose() {
+    if (!outlet || !closeTable || !closeMode) return;
+
+    if (closeMode !== "settle" && !closeReason.trim()) {
+      toast.error("Enter a reason");
+      return;
+    }
+
+    setSubmitting(true);
+    const action =
+      closeMode === "settle"
+        ? "settle_pay"
+        : closeMode === "cancel"
+          ? "cancel_seating"
+          : closeMode === "comp"
+            ? "comp_close"
+            : "walkout_close";
+
+    const res = await fetch(`/api/outlets/${outlet.id}/tables`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "free_table", tableId }),
+      body: JSON.stringify({
+        action,
+        tableId: closeTable.id,
+        paymentMethod: closeMode === "settle" ? paymentMethod : undefined,
+        reason: closeReason.trim() || undefined,
+        recordWaste: closeMode === "walkout" || closeMode === "comp" ? recordWaste : undefined,
+      }),
     });
+    setSubmitting(false);
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      toast.error(data.error || "Could not close table");
+      return;
+    }
+
     load();
-    toast.success("Table freed");
+    setCloseMode(null);
+    setCloseTable(null);
+    const messages: Record<string, string> = {
+      settle: "Bill paid — counted as income",
+      cancel: "Seating cancelled — not counted",
+      walkout: "Walkout recorded — not counted as income",
+      comp: "Comp recorded — not counted as income",
+    };
+    toast.success(messages[closeMode]);
   }
 
   async function deleteTable(tableId: string, label: string) {
@@ -242,49 +296,57 @@ export default function TablesPage() {
 
   if (loading) return <RestoLoader message="Setting the tables..." />;
 
+  const closeAlloc = closeTable?.allocations[0];
+  const closeItems = (closeAlloc?.order?.items ?? []).filter((i) => !i.voided);
+  const closeTotal = orderSubtotal(closeItems);
+
   return (
     <div className="space-y-6 w-full animate-fade-in">
-        <RestoPageHeader
-          title="Tables & Orders"
-          subtitle={`${outlet.name} — seat guests and take orders from your menu`}
-          icon="tables"
-          image="/images/resto-hero.png"
-          action={
-            <Button
-              className="rounded-full bg-[var(--restaurant-yellow)] text-[var(--restaurant-brown)] hover:bg-[var(--restaurant-yellow)]/90 font-semibold shadow-md"
-              onClick={() => openSeatDialog()}
-            >
-              Seat Guests
-            </Button>
-          }
-        />
+      <RestoPageHeader
+        title="Tables & Orders"
+        subtitle={`${outlet.name} — seat, order, settle — or cancel / walkout without counting income`}
+        icon="tables"
+        image="/images/resto-hero.png"
+        action={
+          <Button
+            className="rounded-full bg-[var(--restaurant-yellow)] text-[var(--restaurant-brown)] hover:bg-[var(--restaurant-yellow)]/90 font-semibold shadow-md"
+            onClick={() => openSeatDialog()}
+          >
+            Seat Guests
+          </Button>
+        }
+      />
 
       <Card className="resto-card border-0">
         <CardHeader>
-          <CardTitle className="resto-heading text-base">{canManageSetup ? "Add Table" : "Table setup"}</CardTitle>
+          <CardTitle className="resto-heading text-base">
+            {canManageSetup ? "Add Table" : "Table setup"}
+          </CardTitle>
         </CardHeader>
         {canManageSetup ? (
-        <CardContent className="flex gap-2 flex-wrap">
-          <Input
-            placeholder="Table label (e.g. T1)"
-            value={newTable.label}
-            onChange={(e) => setNewTable({ ...newTable, label: e.target.value })}
-          />
-          <Input
-            placeholder="Capacity"
-            type="number"
-            className="w-24"
-            value={newTable.capacity}
-            onChange={(e) => setNewTable({ ...newTable, capacity: e.target.value })}
-          />
-          <Button className="rounded-full" onClick={createTable}>
-            Add
-          </Button>
-        </CardContent>
+          <CardContent className="flex gap-2 flex-wrap">
+            <Input
+              placeholder="Table label (e.g. T1)"
+              value={newTable.label}
+              onChange={(e) => setNewTable({ ...newTable, label: e.target.value })}
+            />
+            <Input
+              placeholder="Capacity"
+              type="number"
+              className="w-24"
+              value={newTable.capacity}
+              onChange={(e) => setNewTable({ ...newTable, capacity: e.target.value })}
+            />
+            <Button className="rounded-full" onClick={createTable}>
+              Add
+            </Button>
+          </CardContent>
         ) : (
-        <CardContent>
-          <p className="text-sm text-muted-foreground">Managers add tables. Staff can seat guests and take orders.</p>
-        </CardContent>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              Managers add tables. Staff can seat guests and take orders.
+            </p>
+          </CardContent>
         )}
       </Card>
 
@@ -298,8 +360,8 @@ export default function TablesPage() {
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {tables.map((t, i) => {
             const alloc = t.allocations[0];
-            const items = alloc?.order?.items ?? [];
-            const total = orderTotal(items);
+            const items = (alloc?.order?.items ?? []).filter((item) => !item.voided);
+            const total = orderSubtotal(items);
 
             return (
               <Card
@@ -370,21 +432,47 @@ export default function TablesPage() {
                         </Button>
                         <Button
                           size="sm"
+                          className="w-full rounded-full bg-[var(--restaurant-yellow)] text-[var(--restaurant-brown)] hover:bg-[var(--restaurant-yellow)]/90"
+                          onClick={() => openClose(t, "settle")}
+                          disabled={items.length === 0}
+                        >
+                          Settle & pay
+                        </Button>
+                        <Button
+                          size="sm"
                           variant="outline"
                           className="w-full rounded-full"
-                          onClick={() => freeTable(t.id)}
+                          onClick={() => openClose(t, "cancel")}
                         >
-                          Free table
+                          Cancel seating
                         </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="w-full rounded-full text-destructive border-destructive/30"
+                          onClick={() => openClose(t, "walkout")}
+                        >
+                          Walkout / unpaid
+                        </Button>
+                        {canFinance && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="w-full rounded-full text-xs"
+                            onClick={() => openClose(t, "comp")}
+                          >
+                            Comp (manager)
+                          </Button>
+                        )}
                       </>
                     )}
                     {canManageSetup && (
-                    <DeleteButton
-                      label="Delete table"
-                      confirmMessage={`Delete table "${t.label}"?`}
-                      onDelete={() => deleteTable(t.id, t.label)}
-                      className="w-full"
-                    />
+                      <DeleteButton
+                        label="Delete table"
+                        confirmMessage={`Delete table "${t.label}"?`}
+                        onDelete={() => deleteTable(t.id, t.label)}
+                        className="w-full"
+                      />
                     )}
                   </div>
                 </CardContent>
@@ -394,7 +482,6 @@ export default function TablesPage() {
         </div>
       )}
 
-      {/* Seat guests + initial order */}
       <Dialog open={seatOpen} onOpenChange={setSeatOpen}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -441,7 +528,6 @@ export default function TablesPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Add items to existing order */}
       <Dialog open={orderOpen} onOpenChange={setOrderOpen}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -453,25 +539,25 @@ export default function TablesPage() {
             {activeAllocation?.order?.items && activeAllocation.order.items.length > 0 && (
               <div className="rounded-lg border p-3 space-y-2">
                 <p className="text-sm font-semibold">Current order</p>
-                {activeAllocation.order.items.map((item) => (
-                  <div key={item.id} className="flex items-center justify-between gap-2 text-sm">
-                    <span>
-                      {item.quantity}× {item.name} — {fmt(item.price * item.quantity)}
-                    </span>
-                    <DeleteButton
-                      label="Remove"
-                      confirmMessage={`Remove ${item.name} from order?`}
-                      onDelete={async () => {
-                        await removeOrderItem(item.id);
-                        return true;
-                      }}
-                    />
-                  </div>
-                ))}
+                {activeAllocation.order.items
+                  .filter((i) => !i.voided)
+                  .map((item) => (
+                    <div key={item.id} className="flex items-center justify-between gap-2 text-sm">
+                      <span>
+                        {item.quantity}× {item.name} — {fmt(item.price * item.quantity)}
+                      </span>
+                      <DeleteButton
+                        label="Remove"
+                        confirmMessage={`Remove ${item.name} from order?`}
+                        onDelete={async () => {
+                          await removeOrderItem(item.id);
+                          return true;
+                        }}
+                      />
+                    </div>
+                  ))}
                 <p className="text-sm font-bold text-right text-primary pt-1 border-t">
-                  Total: {orderTotal(activeAllocation.order.items) > 0
-                    ? fmt(orderTotal(activeAllocation.order.items))
-                    : fmt(0)}
+                  Total: {fmt(orderSubtotal(activeAllocation.order.items))}
                 </p>
               </div>
             )}
@@ -487,6 +573,111 @@ export default function TablesPage() {
               disabled={submitting || addCart.length === 0}
             >
               {submitting ? "Saving..." : "Add to order"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={!!closeMode}
+        onOpenChange={(open) => {
+          if (!open) {
+            setCloseMode(null);
+            setCloseTable(null);
+          }
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="resto-heading">
+              {closeMode === "settle" && `Settle ${closeTable?.label}`}
+              {closeMode === "cancel" && `Cancel seating · ${closeTable?.label}`}
+              {closeMode === "walkout" && `Walkout · ${closeTable?.label}`}
+              {closeMode === "comp" && `Comp · ${closeTable?.label}`}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            {closeAlloc && (
+              <p className="text-sm text-muted-foreground">
+                {closeAlloc.guestName} · {closeAlloc.guestCount} guests
+                {closeItems.length > 0 ? ` · bill ${fmt(closeTotal)}` : " · no items"}
+              </p>
+            )}
+
+            {closeMode === "settle" && (
+              <>
+                <p className="text-sm">
+                  This adds <strong>{fmt(closeTotal)}</strong> to outlet income and counts as a
+                  successful table turn.
+                </p>
+                <div>
+                  <label className="text-sm font-medium">Payment method</label>
+                  <select
+                    className="w-full border rounded-md px-3 py-2 text-sm mt-1"
+                    value={paymentMethod}
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                  >
+                    <option value="cash">Cash</option>
+                    <option value="upi">UPI</option>
+                    <option value="card">Card</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+              </>
+            )}
+
+            {closeMode === "cancel" && (
+              <p className="text-sm text-muted-foreground">
+                Wrong table or guests left before ordering. No income and no successful turn.
+              </p>
+            )}
+
+            {(closeMode === "walkout" || closeMode === "comp") && (
+              <>
+                <p className="text-sm text-muted-foreground">
+                  Bill will <strong>not</strong> be added to income and will not count as a table
+                  turn.
+                </p>
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={recordWaste}
+                    onChange={(e) => setRecordWaste(e.target.checked)}
+                  />
+                  Food was prepared — deduct inventory as waste
+                </label>
+              </>
+            )}
+
+            {closeMode !== "settle" && (
+              <div>
+                <label className="text-sm font-medium">Reason (required)</label>
+                <Input
+                  className="mt-1"
+                  placeholder={
+                    closeMode === "cancel"
+                      ? "e.g. Guest left / wrong table"
+                      : closeMode === "comp"
+                        ? "e.g. Owner guest"
+                        : "e.g. Refused to pay / emergency"
+                  }
+                  value={closeReason}
+                  onChange={(e) => setCloseReason(e.target.value)}
+                />
+              </div>
+            )}
+
+            <Button
+              className="w-full rounded-full"
+              variant={closeMode === "walkout" ? "destructive" : "default"}
+              onClick={confirmClose}
+              disabled={submitting}
+            >
+              {submitting
+                ? "Saving..."
+                : closeMode === "settle"
+                  ? `Confirm payment · ${fmt(closeTotal)}`
+                  : "Confirm"}
             </Button>
           </div>
         </DialogContent>

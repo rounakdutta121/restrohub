@@ -30,6 +30,18 @@ interface Stock {
   ingredient: Ingredient;
 }
 
+interface MenuItemOption {
+  id: string;
+  name: string;
+}
+
+interface RecipeLine {
+  id: string;
+  quantity: number;
+  ingredient: Ingredient;
+  menuItem: { id: string; name: string };
+}
+
 function getStockMessage(quantity: number, minimum: number, unit: string) {
   if (quantity <= 0) {
     return { label: "Out of stock", hint: "Buy more immediately", variant: "destructive" as const };
@@ -49,19 +61,31 @@ export default function InventoryPage() {
   const canEdit = can("manageInventory");
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [stock, setStock] = useState<Stock[]>([]);
+  const [menuItems, setMenuItems] = useState<MenuItemOption[]>([]);
+  const [recipes, setRecipes] = useState<RecipeLine[]>([]);
   const [newIng, setNewIng] = useState({ name: "", unit: "kg" });
   const [adjust, setAdjust] = useState({ ingredientId: "", quantity: "", minimum: "5" });
+  const [recipeForm, setRecipeForm] = useState({
+    menuItemId: "",
+    ingredientId: "",
+    quantity: "",
+  });
   const [loading, setLoading] = useState(true);
 
   async function load() {
     if (!outlet) return;
     setLoading(true);
-    const d = await fetchJson<{ ingredients: Ingredient[]; stock: Stock[] }>(
-      `/api/outlets/${outlet.id}/inventory`
-    );
+    const d = await fetchJson<{
+      ingredients: Ingredient[];
+      stock: Stock[];
+      menuItems?: MenuItemOption[];
+      recipes?: RecipeLine[];
+    }>(`/api/outlets/${outlet.id}/inventory`);
     if (d) {
       setIngredients(d.ingredients || []);
       setStock(d.stock || []);
+      setMenuItems(d.menuItems || []);
+      setRecipes(d.recipes || []);
     }
     setLoading(false);
   }
@@ -147,6 +171,39 @@ export default function InventoryPage() {
     return ok;
   }
 
+  async function addRecipeLine() {
+    if (!outlet || !recipeForm.menuItemId || !recipeForm.ingredientId || !recipeForm.quantity) {
+      toast.error("Pick a menu item, ingredient, and quantity");
+      return;
+    }
+    const res = await fetch(`/api/outlets/${outlet.id}/inventory`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "add_recipe_line", ...recipeForm }),
+    });
+    if (res.ok) {
+      setRecipeForm({ menuItemId: "", ingredientId: "", quantity: "" });
+      load();
+      toast.success("Recipe line added — stock will deduct on Settle & pay");
+    } else {
+      const data = await res.json().catch(() => ({}));
+      toastApiError(data.error);
+    }
+  }
+
+  async function deleteRecipeLine(id: string) {
+    if (!outlet) return false;
+    const ok = await apiDelete(`/api/outlets/${outlet.id}/inventory`, {
+      action: "delete_recipe_line",
+      recipeLineId: id,
+    });
+    if (ok) {
+      load();
+      toast.success("Recipe line removed");
+    }
+    return ok;
+  }
+
   if (!outlet) {
     return (
       <RestoEmptyState
@@ -176,6 +233,7 @@ export default function InventoryPage() {
           <p>1. Add an ingredient once (e.g. flour, tea, oil)</p>
           <p>2. Set how much you currently have at this outlet</p>
           <p>3. Set a minimum amount — we alert you when stock drops below it</p>
+          <p>4. Link menu items to ingredients (recipes) so Settle &amp; pay deducts stock</p>
         </CardContent>
       </Card>
 
@@ -265,6 +323,76 @@ export default function InventoryPage() {
             </p>
           </div>
           <Button onClick={updateStock}>Save stock</Button>
+        </CardContent>
+      </Card>
+
+      <Card className="resto-card">
+        <CardHeader>
+          <CardTitle className="text-base">Recipes — link menu items to ingredients</CardTitle>
+          <CardDescription>
+            When a table bill is settled, these quantities deduct from stock. Walkouts can deduct as
+            waste if you check that option.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div>
+            <Label>Menu item</Label>
+            <select
+              className="w-full border rounded-md px-3 py-2 text-sm mt-1"
+              value={recipeForm.menuItemId}
+              onChange={(e) => setRecipeForm({ ...recipeForm, menuItemId: e.target.value })}
+            >
+              <option value="">Choose menu item...</option>
+              {menuItems.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <Label>Ingredient</Label>
+            <select
+              className="w-full border rounded-md px-3 py-2 text-sm mt-1"
+              value={recipeForm.ingredientId}
+              onChange={(e) => setRecipeForm({ ...recipeForm, ingredientId: e.target.value })}
+            >
+              <option value="">Choose ingredient...</option>
+              {ingredients.map((i) => (
+                <option key={i.id} value={i.id}>
+                  {i.name} ({i.unit})
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <Label>Qty per serving</Label>
+            <Input
+              type="number"
+              step="any"
+              placeholder="e.g. 0.2"
+              value={recipeForm.quantity}
+              onChange={(e) => setRecipeForm({ ...recipeForm, quantity: e.target.value })}
+              className="mt-1"
+            />
+          </div>
+          <Button onClick={addRecipeLine}>Add recipe line</Button>
+          {recipes.length > 0 && (
+            <div className="space-y-2 pt-2 border-t">
+              {recipes.map((r) => (
+                <div key={r.id} className="flex justify-between items-center text-sm gap-2">
+                  <span>
+                    {r.menuItem.name} ← {r.quantity} {r.ingredient.unit} {r.ingredient.name}
+                  </span>
+                  <DeleteButton
+                    label="Remove"
+                    confirmMessage="Remove this recipe line?"
+                    onDelete={() => deleteRecipeLine(r.id)}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
         </div>

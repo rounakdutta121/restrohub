@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireOutletAccess } from "@/lib/permissions";
+import { requireOutletAccess, hasMinRole } from "@/lib/permissions";
+import { orderSubtotal } from "@/lib/order-math";
+import { createOrderIncomeEntry, reverseOrderIncomeEntry } from "@/lib/order-finance";
+import { applyOrderStockChange } from "@/lib/stock-movements";
+import { writeAuditLog } from "@/lib/audit";
+import type { Role } from "@/lib/roles";
 
 type OrderItemInput = { menuItemId: string; quantity?: number; notes?: string };
 
@@ -34,10 +39,6 @@ async function resolveMenuItems(outletId: string, items: OrderItemInput[]) {
   return resolved;
 }
 
-function orderTotal(items: { price: number; quantity: number }[]) {
-  return items.reduce((sum, i) => sum + i.price * i.quantity, 0);
-}
-
 const allocationInclude = {
   where: { status: "active" as const },
   orderBy: { startTime: "desc" as const },
@@ -50,6 +51,24 @@ const allocationInclude = {
     },
   },
 };
+
+async function getActiveVisit(outletId: string, tableId: string) {
+  const table = await prisma.restaurantTable.findFirst({
+    where: { id: tableId, outletId },
+    include: {
+      allocations: {
+        where: { status: "active" },
+        orderBy: { startTime: "desc" },
+        take: 1,
+        include: {
+          order: { include: { items: true } },
+        },
+      },
+    },
+  });
+  if (!table) return null;
+  return { table, allocation: table.allocations[0] ?? null };
+}
 
 export async function GET(
   _req: Request,
@@ -76,9 +95,19 @@ export async function POST(
   const body = await req.json();
   const { action } = body;
 
-  const minRole = action === "create_table" || action === "delete_table" ? "manager" : undefined;
+  const managerActions = new Set([
+    "create_table",
+    "delete_table",
+    "void_order",
+    "comp_close",
+  ]);
+  const minRole = managerActions.has(action) ? "manager" : undefined;
   const auth = await requireOutletAccess(outletId, minRole);
   if ("error" in auth) return auth.error;
+
+  const actorId = auth.user.id;
+  const workspaceId = auth.workspace.id;
+  const role = auth.member.role as Role;
 
   if (action === "create_table") {
     const table = await prisma.restaurantTable.create({
@@ -112,6 +141,7 @@ export async function POST(
           ? {
               create: {
                 items: { create: orderItems },
+                subtotal: orderSubtotal(orderItems),
               },
             }
           : undefined,
@@ -124,6 +154,16 @@ export async function POST(
     await prisma.restaurantTable.update({
       where: { id: body.tableId },
       data: { status: "occupied" },
+    });
+
+    await writeAuditLog({
+      workspaceId,
+      outletId,
+      actorId,
+      action: "allocate",
+      entityType: "TableAllocation",
+      entityId: allocation.id,
+      after: { tableId: body.tableId, guestName: body.guestName },
     });
 
     return NextResponse.json({ table: { ...table, status: "occupied" }, allocation });
@@ -143,6 +183,10 @@ export async function POST(
       return NextResponse.json({ error: "Active allocation not found" }, { status: 404 });
     }
 
+    if (allocation.order && allocation.order.status !== "open") {
+      return NextResponse.json({ error: "Order is closed" }, { status: 400 });
+    }
+
     const newItems = await resolveMenuItems(outletId, body.items || []);
     if (!newItems.length) {
       return NextResponse.json({ error: "No valid menu items" }, { status: 400 });
@@ -154,6 +198,7 @@ export async function POST(
         data: {
           allocationId: allocation.id,
           items: { create: newItems },
+          subtotal: orderSubtotal(newItems),
         },
         include: { items: true },
       });
@@ -165,41 +210,345 @@ export async function POST(
         where: { id: order.id },
         include: { items: true },
       });
+      if (order) {
+        await prisma.tableOrder.update({
+          where: { id: order.id },
+          data: { subtotal: orderSubtotal(order.items) },
+        });
+        order = await prisma.tableOrder.findUnique({
+          where: { id: order.id },
+          include: { items: true },
+        });
+      }
     }
 
-    return NextResponse.json({ order, total: order ? orderTotal(order.items) : 0 });
+    return NextResponse.json({
+      order,
+      total: order ? orderSubtotal(order.items) : 0,
+    });
   }
 
   if (action === "remove_order_item") {
     const item = await prisma.tableOrderItem.findFirst({
       where: {
         id: body.itemId,
-        order: { allocation: { status: "active", table: { outletId } } },
+        order: {
+          status: "open",
+          allocation: { status: "active", table: { outletId } },
+        },
       },
     });
     if (!item) return NextResponse.json({ error: "Order item not found" }, { status: 404 });
 
     await prisma.tableOrderItem.delete({ where: { id: item.id } });
+    const remaining = await prisma.tableOrderItem.findMany({ where: { orderId: item.orderId } });
+    await prisma.tableOrder.update({
+      where: { id: item.orderId },
+      data: { subtotal: orderSubtotal(remaining) },
+    });
     return NextResponse.json({ success: true });
   }
 
-  if (action === "free_table") {
-    await prisma.tableAllocation.updateMany({
-      where: { tableId: body.tableId, status: "active" },
-      data: { status: "completed", endTime: new Date() },
-    });
-    await prisma.tableOrder.updateMany({
+  if (action === "void_order_item") {
+    const item = await prisma.tableOrderItem.findFirst({
       where: {
-        allocation: { tableId: body.tableId, status: "completed" },
-        status: "open",
+        id: body.itemId,
+        order: {
+          status: "open",
+          allocation: { status: "active", table: { outletId } },
+        },
       },
-      data: { status: "closed" },
     });
-    const table = await prisma.restaurantTable.update({
-      where: { id: body.tableId },
+    if (!item) return NextResponse.json({ error: "Order item not found" }, { status: 404 });
+
+    await prisma.tableOrderItem.update({
+      where: { id: item.id },
+      data: { voided: true },
+    });
+    const remaining = await prisma.tableOrderItem.findMany({ where: { orderId: item.orderId } });
+    await prisma.tableOrder.update({
+      where: { id: item.orderId },
+      data: { subtotal: orderSubtotal(remaining) },
+    });
+    return NextResponse.json({ success: true });
+  }
+
+  /** Settle & pay — only path that creates revenue + successful turn */
+  if (action === "settle_pay") {
+    const visit = await getActiveVisit(outletId, body.tableId);
+    if (!visit?.allocation) {
+      return NextResponse.json({ error: "No active seating" }, { status: 404 });
+    }
+    const { table, allocation } = visit;
+    let order = allocation.order;
+
+    if (!order || order.items.filter((i) => !i.voided).length === 0) {
+      return NextResponse.json(
+        { error: "Add menu items before settling, or cancel the seating" },
+        { status: 400 }
+      );
+    }
+    if (order.status !== "open") {
+      return NextResponse.json({ error: "Order already closed" }, { status: 400 });
+    }
+
+    const paidAt = new Date();
+    const subtotal = orderSubtotal(order.items);
+    const paymentMethod = body.paymentMethod || "cash";
+
+    const finance = await createOrderIncomeEntry({
+      outletId,
+      orderId: order.id,
+      amount: subtotal,
+      paidAt,
+      tableLabel: table.label,
+      guestName: allocation.guestName,
+      paymentMethod,
+      createdById: actorId,
+    });
+
+    order = await prisma.tableOrder.update({
+      where: { id: order.id },
+      data: {
+        status: "paid",
+        subtotal,
+        paidAt,
+        paymentMethod,
+        closedById: actorId,
+        financeEntryId: finance.id,
+        closeReason: null,
+      },
+      include: { items: true },
+    });
+
+    await prisma.tableAllocation.update({
+      where: { id: allocation.id },
+      data: { status: "completed", endTime: paidAt },
+    });
+
+    await prisma.restaurantTable.update({
+      where: { id: table.id },
       data: { status: "available" },
     });
-    return NextResponse.json(table);
+
+    await applyOrderStockChange({
+      outletId,
+      orderId: order.id,
+      items: order.items,
+      type: "sale",
+      createdById: actorId,
+      note: `Sale · ${table.label}`,
+    });
+
+    await writeAuditLog({
+      workspaceId,
+      outletId,
+      actorId,
+      action: "settle_pay",
+      entityType: "TableOrder",
+      entityId: order.id,
+      after: { subtotal, paymentMethod, financeEntryId: finance.id },
+    });
+
+    return NextResponse.json({
+      success: true,
+      order,
+      finance,
+      table: { ...table, status: "available" },
+    });
+  }
+
+  /** Cancel seating — no revenue, no successful turn */
+  if (action === "cancel_seating") {
+    const visit = await getActiveVisit(outletId, body.tableId);
+    if (!visit?.allocation) {
+      return NextResponse.json({ error: "No active seating" }, { status: 404 });
+    }
+    const { table, allocation } = visit;
+    const endTime = new Date();
+    const reason = (body.reason as string | undefined)?.trim() || "cancelled";
+
+    if (allocation.order && allocation.order.status === "open") {
+      await prisma.tableOrder.update({
+        where: { id: allocation.order.id },
+        data: {
+          status: "cancelled",
+          voidedAt: endTime,
+          closeReason: reason,
+          closedById: actorId,
+          subtotal: orderSubtotal(allocation.order.items),
+        },
+      });
+    }
+
+    await prisma.tableAllocation.update({
+      where: { id: allocation.id },
+      data: { status: "cancelled", endTime },
+    });
+    await prisma.restaurantTable.update({
+      where: { id: table.id },
+      data: { status: "available" },
+    });
+
+    await writeAuditLog({
+      workspaceId,
+      outletId,
+      actorId,
+      action: "cancel_seating",
+      entityType: "TableAllocation",
+      entityId: allocation.id,
+      note: reason,
+    });
+
+    return NextResponse.json({ success: true, table: { ...table, status: "available" } });
+  }
+
+  /** Walkout / unpaid — no revenue; optional waste stock */
+  if (action === "walkout_close" || action === "comp_close") {
+    if (action === "comp_close" && !hasMinRole(role, "manager")) {
+      return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
+    }
+
+    const visit = await getActiveVisit(outletId, body.tableId);
+    if (!visit?.allocation) {
+      return NextResponse.json({ error: "No active seating" }, { status: 404 });
+    }
+    const { table, allocation } = visit;
+    const endTime = new Date();
+    const isComp = action === "comp_close";
+    const reason =
+      (body.reason as string | undefined)?.trim() ||
+      (isComp ? "comp" : "walkout");
+
+    if (!reason) {
+      return NextResponse.json({ error: "Reason is required" }, { status: 400 });
+    }
+
+    let order = allocation.order;
+    if (order && order.status === "open") {
+      order = await prisma.tableOrder.update({
+        where: { id: order.id },
+        data: {
+          status: "voided",
+          voidedAt: endTime,
+          closeReason: isComp ? `comp:${reason}` : `walkout:${reason}`,
+          closedById: actorId,
+          subtotal: orderSubtotal(order.items),
+        },
+        include: { items: true },
+      });
+
+      if (body.recordWaste && order.items.length) {
+        await applyOrderStockChange({
+          outletId,
+          orderId: order.id,
+          items: order.items,
+          type: "waste",
+          createdById: actorId,
+          note: isComp ? `Comp waste · ${table.label}` : `Walkout waste · ${table.label}`,
+        });
+      }
+    }
+
+    await prisma.tableAllocation.update({
+      where: { id: allocation.id },
+      data: {
+        status: isComp ? "cancelled" : "walkout",
+        endTime,
+      },
+    });
+    await prisma.restaurantTable.update({
+      where: { id: table.id },
+      data: { status: "available" },
+    });
+
+    await writeAuditLog({
+      workspaceId,
+      outletId,
+      actorId,
+      action,
+      entityType: "TableAllocation",
+      entityId: allocation.id,
+      note: reason,
+      after: { recordWaste: !!body.recordWaste },
+    });
+
+    return NextResponse.json({ success: true, table: { ...table, status: "available" } });
+  }
+
+  /** Void a paid order (manager+) — reverse finance + restock */
+  if (action === "void_order") {
+    const order = await prisma.tableOrder.findFirst({
+      where: {
+        id: body.orderId,
+        status: "paid",
+        allocation: { table: { outletId } },
+      },
+      include: {
+        items: true,
+        allocation: { include: { table: true } },
+      },
+    });
+    if (!order) {
+      return NextResponse.json({ error: "Paid order not found" }, { status: 404 });
+    }
+
+    const reason = (body.reason as string | undefined)?.trim();
+    if (!reason) {
+      return NextResponse.json({ error: "Reason is required to void" }, { status: 400 });
+    }
+
+    await reverseOrderIncomeEntry({
+      outletId,
+      orderId: order.id,
+      financeEntryId: order.financeEntryId,
+      reason,
+      createdById: actorId,
+    });
+
+    await prisma.tableOrder.update({
+      where: { id: order.id },
+      data: {
+        status: "voided",
+        voidedAt: new Date(),
+        closeReason: `void:${reason}`,
+        closedById: actorId,
+      },
+    });
+
+    // Successful turn becomes invalid for analytics (allocation stays completed but order voided)
+    await applyOrderStockChange({
+      outletId,
+      orderId: order.id,
+      items: order.items,
+      type: "reverse_sale",
+      createdById: actorId,
+      note: `Void restock · ${order.allocation.table.label}`,
+    });
+
+    await writeAuditLog({
+      workspaceId,
+      outletId,
+      actorId,
+      action: "void_order",
+      entityType: "TableOrder",
+      entityId: order.id,
+      note: reason,
+      before: { status: "paid", financeEntryId: order.financeEntryId },
+    });
+
+    return NextResponse.json({ success: true });
+  }
+
+  /** Legacy free_table → prefer settle or cancel; keep as cancel for empty, settle blocked */
+  if (action === "free_table") {
+    return NextResponse.json(
+      {
+        error:
+          "Use settle_pay, cancel_seating, or walkout_close instead of free_table",
+      },
+      { status: 400 }
+    );
   }
 
   if (action === "reserve") {

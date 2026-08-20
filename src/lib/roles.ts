@@ -54,7 +54,9 @@ export function isOrgAdmin(role: string): boolean {
 }
 
 export function canAccessNav(role: string, href: string): boolean {
-  if (href === "/dashboard/finance") return can(role, "viewFinance");
+  if (href === "/dashboard/finance" || href === "/dashboard/analytics") {
+    return can(role, "viewFinance");
+  }
   if (href === "/dashboard/team") return can(role, "viewTeam");
   return true;
 }

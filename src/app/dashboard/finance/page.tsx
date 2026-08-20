@@ -21,6 +21,8 @@ interface FinanceEntry {
   category: string;
   date: string;
   note: string | null;
+  sourceType?: string;
+  voidedAt?: string | null;
 }
 
 interface Summary {
@@ -114,7 +116,7 @@ export default function FinancePage() {
     <div className="space-y-6 w-full animate-fade-in">
       <RestoPageHeader
         title="Finance"
-        subtitle={`${outlet.name} — manual ledger`}
+        subtitle={`${outlet.name} — table sales auto-post on settle; add rent, salaries, and other entries manually`}
         icon="finance"
         image="/images/resto-hero.png"
       />
@@ -179,15 +181,22 @@ export default function FinancePage() {
           ) : (
             entries.map((e) => (
               <div key={e.id} className="flex justify-between items-center py-2 border-b last:border-0 text-sm gap-4">
-                <div>
+                <div className={e.voidedAt ? "opacity-50 line-through" : ""}>
                   <span className="font-medium capitalize">{e.category}</span>
+                  <span className="ml-2 text-[10px] uppercase tracking-wide text-muted-foreground">
+                    {e.sourceType === "order"
+                      ? "Table sale"
+                      : e.sourceType === "adjustment"
+                        ? "Void adj."
+                        : "Manual"}
+                  </span>
                   {e.note && <span className="text-muted-foreground ml-2">{e.note}</span>}
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
                   <span className={e.type === "income" ? "text-green-600 font-semibold" : "text-primary font-semibold"}>
                     {formatSignedCurrency(e.amount, currency, e.type === "income" ? "+" : "-")}
                   </span>
-                  {canEdit && (
+                  {canEdit && e.sourceType === "manual" && !e.voidedAt && (
                   <DeleteButton
                     label="Delete"
                     confirmMessage="Delete this finance entry?"
