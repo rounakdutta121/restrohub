@@ -2,39 +2,107 @@ import type { Metadata } from "next";
 import { getAppUrl } from "./env";
 
 export const SITE_NAME = "RestoHub";
-export const SITE_TAGLINE = "Restaurant Management Software & QR Menus";
+export const SITE_TAGLINE = "Free Restaurant Management Software & QR Menus";
+export const SITE_LOCALE = "en_IN";
+/** Set when you have a real X/Twitter handle; omit fake handles from cards */
+export const TWITTER_HANDLE: string | undefined = undefined;
 
-/** Core restaurant, food & hospitality keywords for public SEO */
+/** High-intent keywords from restaurant SaaS / F&B ops search demand (India + global) */
 export const RESTAURANT_KEYWORDS = [
+  // Core product
   "restaurant management software",
+  "free restaurant management software",
+  "restaurant operations software",
   "restaurant operations platform",
-  "food service management",
-  "restaurant POS software",
-  "QR code menu restaurant",
-  "digital menu QR code",
-  "multi outlet restaurant management",
-  "restaurant inventory management",
-  "kitchen stock management",
-  "restaurant checklist software",
-  "table management restaurant",
-  "restaurant staff management",
-  "food and beverage operations",
+  "restaurant SaaS India",
   "F&B management software",
-  "restaurant SaaS",
-  "cloud kitchen management",
-  "cafe management software",
-  "dhaba management system",
-  "Indian restaurant software",
-  "restaurant finance tracking",
-  "menu management system",
-  "restaurant ERP",
+  "food service management software",
   "hospitality management software",
-  "restaurant booking and tables",
-  "prep checklist kitchen",
-  "low stock alerts restaurant",
-  "restaurant team invites",
-  "INR restaurant finance",
+  // Menus / QR
+  "QR code menu for restaurant",
+  "QR digital menu India",
+  "restaurant QR menu generator",
+  "digital food menu",
+  "contactless restaurant menu",
+  "online menu for cafe",
+  // Multi-outlet
+  "multi outlet restaurant software",
+  "multi location restaurant management",
+  "chain restaurant management software",
+  // Inventory
+  "restaurant inventory management software",
+  "kitchen stock management",
+  "restaurant low stock alerts",
+  "ingredient tracking restaurant",
+  // Tables / orders
+  "restaurant table management system",
+  "table order management restaurant",
+  "dine in order management",
+  // Kitchen ops
+  "restaurant checklist software",
+  "kitchen prep checklist app",
+  "restaurant SOP software",
+  // Team / finance
+  "restaurant staff management software",
+  "restaurant finance tracking",
+  "restaurant expense tracker",
+  "restaurant analytics dashboard",
+  // Segment
+  "cafe management software",
+  "cloud kitchen management software",
+  "dhaba management software",
+  "Indian restaurant software",
+  "INR restaurant software",
+  "restaurant software for small business",
 ] as const;
+
+export const PAGE_KEYWORDS = {
+  home: [
+    "best free restaurant software 2026",
+    "restaurant management app free",
+    "all in one restaurant software",
+    "restaurant dashboard software",
+    "food business software India",
+  ],
+  services: [
+    "restaurant QR menu service",
+    "kitchen inventory software",
+    "restaurant table order system",
+    "food service checklist app",
+    "multi location restaurant tools",
+    "restaurant stock alert system",
+    "F&B finance software",
+  ],
+  about: [
+    "restaurant software company India",
+    "about RestoHub",
+    "food service operations platform",
+    "trusted restaurant management software",
+    "kitchen operations software India",
+  ],
+  privacy: [
+    "restaurant software privacy policy",
+    "food business data protection",
+    "restaurant SaaS GDPR",
+    "restaurant data security",
+  ],
+  signup: [
+    "free restaurant software signup",
+    "create restaurant management account",
+    "QR menu free account",
+    "start free restaurant software",
+  ],
+  login: [
+    "RestoHub login",
+    "restaurant dashboard login",
+  ],
+  menu: [
+    "restaurant digital menu",
+    "scan QR food menu",
+    "outlet food menu online",
+    "cafe menu QR code",
+  ],
+} as const;
 
 export function getSiteUrl(): string {
   return getAppUrl();
@@ -42,152 +110,260 @@ export function getSiteUrl(): string {
 
 const defaultOgImage = "/images/resto-hero.png";
 
+function absoluteUrl(pathOrUrl: string): string {
+  if (pathOrUrl.startsWith("http://") || pathOrUrl.startsWith("https://")) {
+    return pathOrUrl;
+  }
+  const base = getSiteUrl().replace(/\/$/, "");
+  const path = pathOrUrl.startsWith("/") ? pathOrUrl : `/${pathOrUrl}`;
+  return `${base}${path}`;
+}
+
+function uniqueKeywords(...lists: (readonly string[] | string[])[]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const list of lists) {
+    for (const kw of list) {
+      const key = kw.trim().toLowerCase();
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      out.push(kw.trim());
+    }
+  }
+  return out;
+}
+
 type PageSeoOptions = {
   title: string;
   description: string;
   path: string;
   keywords?: string[];
   ogImage?: string;
+  /** Prefer "website" for marketing; "article" for long-form */
+  ogType?: "website" | "article";
   noIndex?: boolean;
 };
 
+/**
+ * Full public-page SEO: canonical, robots, keywords, Open Graph (FB/LinkedIn/IG), Twitter.
+ * Instagram and LinkedIn primarily read Open Graph tags.
+ */
 export function createPageMetadata({
   title,
   description,
   path,
   keywords = [],
   ogImage = defaultOgImage,
+  ogType = "website",
   noIndex = false,
 }: PageSeoOptions): Metadata {
-  const url = `${getSiteUrl()}${path}`;
-  const allKeywords = [...RESTAURANT_KEYWORDS, ...keywords];
+  const canonical = absoluteUrl(path === "/" ? "/" : path);
+  const imageUrl = absoluteUrl(ogImage);
+  const fullTitle = title.includes(SITE_NAME) ? title : `${title} | ${SITE_NAME}`;
+  const allKeywords = uniqueKeywords(RESTAURANT_KEYWORDS, keywords);
 
   return {
     title,
     description,
     keywords: allKeywords,
-    alternates: { canonical: url },
+    applicationName: SITE_NAME,
+    authors: [{ name: SITE_NAME, url: getSiteUrl() }],
+    creator: SITE_NAME,
+    publisher: SITE_NAME,
+    category: "Food & Drink",
+    alternates: { canonical },
     robots: noIndex
-      ? { index: false, follow: false }
-      : { index: true, follow: true, googleBot: { index: true, follow: true } },
+      ? {
+          index: false,
+          follow: false,
+          googleBot: { index: false, follow: false, noimageindex: true },
+        }
+      : {
+          index: true,
+          follow: true,
+          googleBot: {
+            index: true,
+            follow: true,
+            "max-image-preview": "large",
+            "max-snippet": -1,
+            "max-video-preview": -1,
+          },
+        },
     openGraph: {
-      type: "website",
-      locale: "en_IN",
-      url,
+      type: ogType,
+      locale: SITE_LOCALE,
+      url: canonical,
       siteName: SITE_NAME,
-      title: `${title} | ${SITE_NAME}`,
+      title: fullTitle,
       description,
       images: [
         {
-          url: ogImage,
+          url: imageUrl,
+          secureUrl: imageUrl,
           width: 1200,
           height: 630,
           alt: `${SITE_NAME} — ${SITE_TAGLINE}`,
+          type: "image/png",
         },
       ],
     },
     twitter: {
       card: "summary_large_image",
-      title: `${title} | ${SITE_NAME}`,
+      ...(TWITTER_HANDLE ? { site: TWITTER_HANDLE, creator: TWITTER_HANDLE } : {}),
+      title: fullTitle,
       description,
-      images: [ogImage],
+      images: [
+        {
+          url: imageUrl,
+          alt: `${SITE_NAME} — ${SITE_TAGLINE}`,
+        },
+      ],
+    },
+    // Extra share / crawler hints (IG/FB/LinkedIn lean on OG; these help consistency)
+    other: {
+      "og:image:alt": `${SITE_NAME} — ${SITE_TAGLINE}`,
+      "instagram:title": fullTitle,
+      "instagram:description": description,
     },
   };
 }
 
 export const rootMetadata: Metadata = {
-  metadataBase: new URL(getSiteUrl()),
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL ||
+      process.env.NEXTAUTH_URL ||
+      "https://restohubpartner.vercel.app"
+  ),
   title: {
     default: `${SITE_NAME} — ${SITE_TAGLINE}`,
     template: `%s | ${SITE_NAME}`,
   },
   description:
-    "RestoHub is restaurant management software for multi-outlet food businesses — QR digital menus, kitchen inventory, table orders, prep checklists, staff roles, and finance in one platform. Built for restaurants, cafes, dhabas, and cloud kitchens in India and worldwide.",
-  keywords: [...RESTAURANT_KEYWORDS],
-  authors: [{ name: SITE_NAME, url: getSiteUrl() }],
+    "RestoHub is free restaurant management software for multi-outlet food businesses — QR digital menus, kitchen inventory, table orders, prep checklists, staff roles, analytics, and finance. Built for restaurants, cafes, dhabas, and cloud kitchens in India and worldwide.",
+  keywords: uniqueKeywords(RESTAURANT_KEYWORDS, PAGE_KEYWORDS.home),
+  authors: [{ name: SITE_NAME, url: "https://restohubpartner.vercel.app" }],
   creator: SITE_NAME,
   publisher: SITE_NAME,
   category: "Food & Drink",
-  robots: { index: true, follow: true },
+  formatDetection: { telephone: true, email: true, address: true },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
   openGraph: {
     type: "website",
-    locale: "en_IN",
+    locale: SITE_LOCALE,
+    url: "https://restohubpartner.vercel.app",
     siteName: SITE_NAME,
     title: `${SITE_NAME} — ${SITE_TAGLINE}`,
     description:
-      "Run every outlet from one hub — QR menus, stock alerts, table orders, kitchen checklists, and restaurant finance.",
-    images: [{ url: defaultOgImage, width: 1200, height: 630, alt: SITE_NAME }],
+      "Run every outlet from one hub — free QR menus, stock alerts, table orders, kitchen checklists, finance & analytics for restaurants.",
+    images: [
+      {
+        url: "/images/resto-hero.png",
+        width: 1200,
+        height: 630,
+        alt: `${SITE_NAME} restaurant management software`,
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
+    ...(TWITTER_HANDLE ? { site: TWITTER_HANDLE, creator: TWITTER_HANDLE } : {}),
     title: `${SITE_NAME} — ${SITE_TAGLINE}`,
-    description: "Restaurant management software with QR menus, inventory, tables & team roles.",
-    images: [defaultOgImage],
+    description:
+      "Free restaurant management software with QR menus, inventory, tables, team roles & analytics.",
+    images: ["/images/resto-hero.png"],
   },
   icons: {
     icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
+    apple: [{ url: "/apple-icon" }],
   },
   manifest: "/manifest.webmanifest",
+  // Google Search Console: HTML file at /googlef2024d0ddf99fba6.html
+  other: {
+    "instagram:title": `${SITE_NAME} — ${SITE_TAGLINE}`,
+    "instagram:description":
+      "Free restaurant ops hub — QR menus, stock, tables, checklists & finance.",
+  },
 };
 
 export function organizationJsonLd() {
+  const url = getSiteUrl();
   return {
     "@context": "https://schema.org",
     "@type": "Organization",
     name: SITE_NAME,
-    url: getSiteUrl(),
-    logo: `${getSiteUrl()}/icon.svg`,
+    url,
+    logo: `${url}/icon.svg`,
     description:
-      "Restaurant management software for QR menus, multi-outlet operations, kitchen inventory, and food service teams.",
+      "Free restaurant management software for QR menus, multi-outlet operations, kitchen inventory, table orders, and food service teams.",
+    email: "rounak153d@gmail.com",
+    telephone: "+919815121578",
     contactPoint: {
       "@type": "ContactPoint",
       contactType: "customer support",
       email: "rounak153d@gmail.com",
       telephone: "+919815121578",
       availableLanguage: ["English", "Hindi"],
+      areaServed: ["IN", "Worldwide"],
     },
-    sameAs: [],
+    sameAs: ["https://panelverse.onrender.com"],
   };
 }
 
 export function softwareApplicationJsonLd() {
+  const url = getSiteUrl();
   return {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
     name: SITE_NAME,
+    url,
     applicationCategory: "BusinessApplication",
     applicationSubCategory: "Restaurant Management Software",
     operatingSystem: "Web",
     description:
-      "All-in-one restaurant operations: digital QR menus, inventory & stock alerts, table seating and orders, prep checklists, finance ledger, and role-based staff access.",
+      "All-in-one free restaurant operations: digital QR menus, inventory & stock alerts, table seating and orders, prep checklists, finance ledger, analytics, and role-based staff access.",
     offers: {
       "@type": "Offer",
       price: "0",
-      priceCurrency: "USD",
+      priceCurrency: "INR",
       description: "Free during initial release — unlimited outlets, staff, and menus",
+      availability: "https://schema.org/InStock",
+      url: `${url}/signup`,
     },
     featureList: [
       "Multi-outlet restaurant management",
       "QR code digital menus",
       "Kitchen inventory tracking",
-      "Table allocation and orders",
+      "Table allocation and paid orders",
       "Prep and maintenance checklists",
-      "Restaurant finance ledger",
+      "Restaurant finance and analytics",
       "Staff roles and invites",
     ],
   };
 }
 
 export function webSiteJsonLd() {
+  const url = getSiteUrl();
   return {
     "@context": "https://schema.org",
     "@type": "WebSite",
     name: SITE_NAME,
-    url: getSiteUrl(),
+    url,
     description: SITE_TAGLINE,
+    inLanguage: "en-IN",
+    publisher: { "@type": "Organization", name: SITE_NAME, url },
     potentialAction: {
       "@type": "SearchAction",
-      target: `${getSiteUrl()}/services?q={search_term_string}`,
+      target: `${url}/services?q={search_term_string}`,
       "query-input": "required name=search_term_string",
     },
   };
@@ -216,7 +392,7 @@ export function breadcrumbJsonLd(items: { name: string; path: string }[]) {
       "@type": "ListItem",
       position: index + 1,
       name: item.name,
-      item: `${getSiteUrl()}${item.path}`,
+      item: absoluteUrl(item.path),
     })),
   };
 }
@@ -225,7 +401,7 @@ export const HOME_FAQS = [
   {
     question: "What is RestoHub restaurant management software?",
     answer:
-      "RestoHub is an all-in-one restaurant operations platform for multi-outlet food businesses. It includes QR digital menus, kitchen inventory tracking, table seating and orders, prep checklists, staff role management, and per-outlet finance — built for restaurants, cafes, dhabas, and cloud kitchens.",
+      "RestoHub is a free all-in-one restaurant operations platform for multi-outlet food businesses. It includes QR digital menus, kitchen inventory tracking, table seating and orders, prep checklists, staff role management, finance, and analytics — built for restaurants, cafes, dhabas, and cloud kitchens.",
   },
   {
     question: "Does RestoHub support QR code menus for restaurants?",

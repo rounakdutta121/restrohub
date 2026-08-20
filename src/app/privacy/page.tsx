@@ -3,18 +3,14 @@ import type { ReactNode } from "react";
 import { SiteShell } from "@/components/marketing/site-shell";
 import { BreadcrumbJsonLd } from "@/components/marketing/json-ld";
 import { SITE_CONTACT } from "@/lib/site-content";
-import { createPageMetadata } from "@/lib/seo";
+import { createPageMetadata, PAGE_KEYWORDS } from "@/lib/seo";
 
 export const metadata = createPageMetadata({
   title: "Privacy Policy — Restaurant Data Protection",
   description:
-    "RestoHub privacy policy for restaurant operators: how we collect, store, and protect your food business data, team accounts, outlet menus, inventory, and finance records.",
+    "RestoHub privacy policy for restaurant operators: how we collect, store, and protect your food business data, team accounts, outlet menus, inventory, orders, and finance records.",
   path: "/privacy",
-  keywords: [
-    "restaurant software privacy",
-    "food business data protection",
-    "restaurant SaaS privacy policy",
-  ],
+  keywords: [...PAGE_KEYWORDS.privacy],
 });
 
 const policySections: { title: string; body: ReactNode }[] = [

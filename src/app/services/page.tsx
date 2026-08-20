@@ -5,20 +5,14 @@ import { SiteShell } from "@/components/marketing/site-shell";
 import { BreadcrumbJsonLd } from "@/components/marketing/json-ld";
 import { RestoIcon, type RestoIconName } from "@/components/brand/icons";
 import { SITE_CONTACT } from "@/lib/site-content";
-import { createPageMetadata } from "@/lib/seo";
+import { createPageMetadata, PAGE_KEYWORDS } from "@/lib/seo";
 
 export const metadata = createPageMetadata({
-  title: "Restaurant Software Services — QR Menus, Stock, Tables & More",
+  title: "Restaurant Software Features — QR Menus, Stock, Tables & Analytics",
   description:
-    "Explore RestoHub restaurant services: multi-outlet management, QR digital food menus, kitchen inventory & stock alerts, table seating and orders, prep checklists, F&B finance ledger, and role-based restaurant staff management.",
+    "Explore RestoHub features: multi-outlet restaurant management, QR digital food menus, kitchen inventory & low-stock alerts, table seating & paid orders, prep checklists, F&B finance, owner analytics, and role-based staff tools — free for food outlets.",
   path: "/services",
-  keywords: [
-    "restaurant QR menu service",
-    "kitchen inventory software",
-    "restaurant table order system",
-    "food service checklist app",
-    "multi location restaurant tools",
-  ],
+  keywords: [...PAGE_KEYWORDS.services],
   ogImage: "/images/resto-operations.png",
 });
 

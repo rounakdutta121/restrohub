@@ -5,19 +5,14 @@ import { SiteShell } from "@/components/marketing/site-shell";
 import { BreadcrumbJsonLd } from "@/components/marketing/json-ld";
 import { RestoIcon } from "@/components/brand/icons";
 import { SITE_CONTACT } from "@/lib/site-content";
-import { createPageMetadata } from "@/lib/seo";
+import { createPageMetadata, PAGE_KEYWORDS } from "@/lib/seo";
 
 export const metadata = createPageMetadata({
-  title: "About RestoHub — Restaurant Operations Software You Can Trust",
+  title: "About RestoHub — Free Restaurant Operations Software",
   description:
-    "RestoHub was built for real kitchens — restaurant owners, cafe operators, and cloud kitchen teams who need QR menus, stock control, table orders, and staff tools without enterprise complexity. Learn our mission and values.",
+    "Learn about RestoHub: free restaurant operations software built for real kitchens — owners, cafe operators, and cloud kitchen teams who need QR menus, stock control, table orders, analytics, and staff tools without enterprise complexity.",
   path: "/about",
-  keywords: [
-    "restaurant software company",
-    "food service operations platform",
-    "trusted restaurant management",
-    "kitchen operations software India",
-  ],
+  keywords: [...PAGE_KEYWORDS.about],
   ogImage: "/images/resto-trust.png",
 });
 

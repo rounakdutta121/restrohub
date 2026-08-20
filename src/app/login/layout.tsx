@@ -1,11 +1,12 @@
 import { Suspense } from "react";
-import { createPageMetadata } from "@/lib/seo";
+import { createPageMetadata, PAGE_KEYWORDS } from "@/lib/seo";
 
 export const metadata = createPageMetadata({
-  title: "Sign In — Restaurant Dashboard",
+  title: "Sign In to Your Restaurant Dashboard",
   description:
-    "Sign in to RestoHub to manage your restaurant outlets, QR food menus, kitchen inventory, table orders, and team operations.",
+    "Sign in to RestoHub to manage restaurant outlets, QR food menus, kitchen inventory, table orders, finance, analytics, and team operations.",
   path: "/login",
+  keywords: [...PAGE_KEYWORDS.login],
   noIndex: true,
 });
 

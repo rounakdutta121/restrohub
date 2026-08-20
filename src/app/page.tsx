@@ -5,20 +5,15 @@ import { SiteShell } from "@/components/marketing/site-shell";
 import { HomeFaqJsonLd } from "@/components/marketing/json-ld";
 import { RestoIcon, RestoIconBadge, type RestoIconName } from "@/components/brand/icons";
 import { SITE_CONTACT } from "@/lib/site-content";
-import { createPageMetadata } from "@/lib/seo";
+import { createPageMetadata, PAGE_KEYWORDS } from "@/lib/seo";
 
 export const metadata = createPageMetadata({
-  title: "Restaurant Management Software & QR Digital Menus",
+  title: "Free Restaurant Management Software & QR Digital Menus",
   description:
-    "RestoHub helps restaurants, cafes, dhabas, and cloud kitchens run smarter — multi-outlet dashboards, QR food menus, kitchen inventory, table orders, prep checklists, staff management, and INR-ready finance. Start free today.",
+    "RestoHub is free restaurant management software for restaurants, cafes, dhabas & cloud kitchens — multi-outlet dashboards, QR food menus, kitchen inventory, table orders, prep checklists, staff roles, finance & analytics. Start free, no card needed.",
   path: "/",
-  keywords: [
-    "free restaurant management software",
-    "restaurant QR menu generator",
-    "food business software India",
-    "restaurant operations hub",
-    "digital food menu",
-  ],
+  keywords: [...PAGE_KEYWORDS.home],
+  ogImage: "/images/resto-hero.png",
 });
 
 const features: { icon: RestoIconName; title: string; desc: string }[] = [
