@@ -6,6 +6,7 @@ import Link from "next/link";
 import { formatCurrency } from "@/lib/currency";
 import { RestoLoader } from "@/components/ui/resto-loader";
 import { RestoIcon } from "@/components/brand/icons";
+import { DevelopedBy } from "@/components/brand/developed-by";
 import { Button } from "@/components/ui/button";
 
 interface MenuData {
@@ -173,6 +174,7 @@ export default function PublicMenuPage({ params }: { params: Promise<{ slug: str
             Bon appétit!
             <RestoIcon name="flame" className="h-3 w-3 text-primary" />
           </p>
+          <DevelopedBy className="mt-3 pt-0 pb-0" />
         </div>
       </div>
     </div>

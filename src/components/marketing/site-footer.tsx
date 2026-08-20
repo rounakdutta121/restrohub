@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { LogoMark } from "@/components/brand/logo";
 import { RestoIcon } from "@/components/brand/icons";
+import { DevelopedBy } from "@/components/brand/developed-by";
 import { PUBLIC_NAV, SITE_CONTACT } from "@/lib/site-content";
 
 export function SiteFooter() {
@@ -81,9 +82,12 @@ export function SiteFooter() {
             <RestoIcon name="flame" className="h-3.5 w-3.5 text-[var(--restaurant-yellow)]" />
             for restaurants worldwide.
           </p>
-          <Link href="/privacy" className="hover:text-white transition-colors">
-            Privacy Policy
-          </Link>
+          <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-6">
+            <Link href="/privacy" className="hover:text-white transition-colors">
+              Privacy Policy
+            </Link>
+            <DevelopedBy variant="onDark" className="py-0" />
+          </div>
         </div>
       </div>
     </footer>

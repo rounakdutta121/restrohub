@@ -24,6 +24,7 @@ import { NotificationBell } from "@/components/notification-bell";
 import { LogoMark } from "@/components/brand/logo";
 import { RoleBadge } from "@/components/brand/role-badge";
 import { RestoIcon, type RestoIconName } from "@/components/brand/icons";
+import { DevelopedBy } from "@/components/brand/developed-by";
 import { cn } from "@/lib/utils";
 
 type NavItem = {
@@ -303,6 +304,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
 
         <main className="flex-1 w-full px-4 sm:px-6 lg:px-8 py-6 resto-pattern">
           <div className="w-full max-w-6xl mx-auto">{children}</div>
+          <DevelopedBy className="mt-10 mb-2" />
         </main>
       </div>
 
