@@ -13,6 +13,7 @@ import { RestoPageHeader, RestoEmptyState } from "@/components/brand/page-header
 import { RestoLoader } from "@/components/ui/resto-loader";
 import { DeleteButton, apiDelete } from "@/components/ui/delete-button";
 import { toast } from "sonner";
+import { useOutletLive } from "@/hooks/use-outlet-live";
 
 interface Checklist {
   id: string;
@@ -48,6 +49,14 @@ export default function ChecklistsPage() {
       .then((d) => Array.isArray(d) && setChecklists(d))
       .finally(() => setLoading(false));
   }, [organization, outlet]);
+
+  useOutletLive(outlet?.id, () => {
+    if (!organization) return;
+    const params = outlet ? `?outletId=${outlet.id}` : "";
+    fetch(`/api/workspaces/${organization.id}/sops${params}`, { cache: "no-store" })
+      .then((r) => r.json())
+      .then((d) => Array.isArray(d) && setChecklists(d));
+  });
 
   async function createChecklist(type: string) {
     if (!organization) return;

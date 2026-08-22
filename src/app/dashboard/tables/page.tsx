@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,6 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useOutlet } from "@/hooks/use-outlet";
+import { useOutletLive } from "@/hooks/use-outlet-live";
 import { usePermissions } from "@/hooks/use-permissions";
 import { RestoPageHeader, RestoEmptyState } from "@/components/brand/page-header";
 import { RestoLoader } from "@/components/ui/resto-loader";
@@ -32,6 +33,13 @@ interface OrderItem {
   price: number;
   quantity: number;
   voided?: boolean;
+  kitchenStatus?: string;
+}
+
+function kitchenBadgeVariant(status?: string) {
+  if (status === "ready") return "default" as const;
+  if (status === "preparing") return "secondary" as const;
+  return "outline" as const;
 }
 
 interface Allocation {
@@ -75,23 +83,57 @@ export default function TablesPage() {
   const [closeReason, setCloseReason] = useState("");
   const [recordWaste, setRecordWaste] = useState(false);
 
-  function load() {
-    if (!outlet) return;
-    setLoading(true);
-    Promise.all([
-      fetch(`/api/outlets/${outlet.id}/tables`).then((r) => r.json()),
-      fetch(`/api/outlets/${outlet.id}/menus`).then((r) => r.json()),
-    ])
-      .then(([tablesData, menuData]) => {
-        if (Array.isArray(tablesData)) setTables(tablesData);
-        if (Array.isArray(menuData)) setMenu(menuData);
-      })
-      .finally(() => setLoading(false));
-  }
+  const load = useCallback(
+    (opts?: { silent?: boolean }) => {
+      if (!outlet) return;
+      if (!opts?.silent) setLoading(true);
+
+      const tablesReq = fetch(`/api/outlets/${outlet.id}/tables`, {
+        cache: "no-store",
+      }).then((r) => r.json());
+
+      // Live polls only need tables; menus change rarely.
+      if (opts?.silent) {
+        tablesReq
+          .then((tablesData) => {
+            if (Array.isArray(tablesData)) setTables(tablesData);
+          })
+          .catch(() => {});
+        return;
+      }
+
+      Promise.all([
+        tablesReq,
+        fetch(`/api/outlets/${outlet.id}/menus`, { cache: "no-store" }).then((r) =>
+          r.json()
+        ),
+      ])
+        .then(([tablesData, menuData]) => {
+          if (Array.isArray(tablesData)) setTables(tablesData);
+          if (Array.isArray(menuData)) setMenu(menuData);
+        })
+        .finally(() => setLoading(false));
+    },
+    [outlet]
+  );
 
   useEffect(() => {
     load();
-  }, [outlet]);
+  }, [load]);
+
+  useOutletLive(outlet?.id, () => load({ silent: true }));
+
+  // Keep open order dialog in sync with live table refreshes
+  useEffect(() => {
+    if (!activeAllocation) return;
+    for (const t of tables) {
+      const alloc = t.allocations[0];
+      if (alloc?.id === activeAllocation.id) {
+        setActiveAllocation(alloc);
+        return;
+      }
+    }
+  }, [tables, activeAllocation?.id]);
 
   function resetSeatForm() {
     setGuest(emptyGuest);
@@ -304,7 +346,7 @@ export default function TablesPage() {
     <div className="space-y-6 w-full animate-fade-in">
       <RestoPageHeader
         title="Tables & Orders"
-        subtitle={`${outlet.name} — seat, order, settle — or cancel / walkout without counting income`}
+        subtitle={`${outlet.name} — seat, order, settle — live across devices`}
         icon="tables"
         image="/images/resto-hero.png"
         action={
@@ -388,12 +430,22 @@ export default function TablesPage() {
                       {items.length > 0 ? (
                         <div className="rounded-lg bg-secondary/20 p-2 space-y-1 text-xs">
                           {items.slice(0, 3).map((item) => (
-                            <div key={item.id} className="flex justify-between gap-2">
+                            <div key={item.id} className="flex justify-between gap-2 items-center">
                               <span className="truncate">
                                 {item.quantity}× {item.name}
                               </span>
-                              <span className="font-medium shrink-0">
-                                {fmt(item.price * item.quantity)}
+                              <span className="flex items-center gap-1.5 shrink-0">
+                                {item.kitchenStatus && (
+                                  <Badge
+                                    variant={kitchenBadgeVariant(item.kitchenStatus)}
+                                    className="capitalize text-[10px] px-1.5 py-0"
+                                  >
+                                    {item.kitchenStatus}
+                                  </Badge>
+                                )}
+                                <span className="font-medium">
+                                  {fmt(item.price * item.quantity)}
+                                </span>
                               </span>
                             </div>
                           ))}
@@ -543,8 +595,18 @@ export default function TablesPage() {
                   .filter((i) => !i.voided)
                   .map((item) => (
                     <div key={item.id} className="flex items-center justify-between gap-2 text-sm">
-                      <span>
-                        {item.quantity}× {item.name} — {fmt(item.price * item.quantity)}
+                      <span className="flex items-center gap-2 min-w-0">
+                        <span className="truncate">
+                          {item.quantity}× {item.name} — {fmt(item.price * item.quantity)}
+                        </span>
+                        {item.kitchenStatus && (
+                          <Badge
+                            variant={kitchenBadgeVariant(item.kitchenStatus)}
+                            className="capitalize shrink-0 text-[10px] px-1.5 py-0"
+                          >
+                            {item.kitchenStatus}
+                          </Badge>
+                        )}
                       </span>
                       <DeleteButton
                         label="Remove"

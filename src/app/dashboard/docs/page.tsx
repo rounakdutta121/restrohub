@@ -18,6 +18,7 @@ const sections: { id: string; label: string; icon: RestoIconName }[] = [
   { id: "checklists", label: "Prep & checklists", icon: "prep" },
   { id: "runs", label: "Runs", icon: "runs" },
   { id: "tables", label: "Tables & orders", icon: "tables" },
+  { id: "kitchen", label: "Kitchen board", icon: "chef" },
   { id: "finance", label: "Finance", icon: "finance" },
   { id: "analytics", label: "Analytics", icon: "chart" },
   { id: "team", label: "Team & invites", icon: "team" },
@@ -367,8 +368,9 @@ export default function DocsPage() {
             <StepList
               items={[
                 "Click Seat Guests or Seat & order on an available table.",
-                "Enter guest name and party size; optionally add menu items.",
-                "For occupied tables: Add menu items to the open order.",
+                "Enter guest name and party size; search the menu to add dishes fast (type + Enter).",
+                "For occupied tables: Add menu items — kitchen sees them live within seconds.",
+                "Line badges show Kitchen / Prep / Ready from the kitchen board.",
                 "Settle & pay — guests paid. This posts income and counts as a successful table turn.",
                 "Cancel seating — wrong table / left before ordering. No income, no turn.",
                 "Walkout / unpaid — bill not collected. No income, no turn. Optionally deduct stock as waste.",
@@ -378,8 +380,29 @@ export default function DocsPage() {
             <p>
               Only <strong className="text-foreground">Settle & pay</strong> counts toward revenue
               and successful turns. Mistakes after payment are fixed by voiding the bill in
-              Analytics (manager).
+              Analytics (manager). The floor board refreshes live for everyone on the same outlet —
+              no reload needed.
             </p>
+          </DocSection>
+
+          <DocSection id="kitchen" title="Kitchen board" icon="chef">
+            <p>
+              <strong className="text-foreground">Where:</strong>{" "}
+              <FeatureLink href="/dashboard/kitchen" label="Kitchen" />.
+            </p>
+            <p>
+              <strong className="text-foreground">Who:</strong> All staff and managers with outlet
+              access.
+            </p>
+            <StepList
+              items={[
+                "When a waiter seats with items or adds dishes, tickets appear here automatically.",
+                "Tap Start (preparing) then Ready so the floor sees status on Tables.",
+                "Cancel line if an item was fired by mistake.",
+                "Filter by Pending / Preparing / Ready during rush.",
+                "Keep this page open on a kitchen tablet — it polls live while the tab is visible.",
+              ]}
+            />
           </DocSection>
 
           <DocSection id="finance" title="Finance" icon="finance">
@@ -455,15 +478,20 @@ export default function DocsPage() {
               <strong className="text-foreground">Where:</strong> Bell icon in the top bar →{" "}
               <FeatureLink href="/dashboard/notifications" label="Notifications" /> page.
             </p>
-            <p>You receive alerts for:</p>
+            <p>
+              Alerts follow role hierarchy for the selected outlet — you only get what your role
+              can act on. Boards across the dashboard also refresh live (no reload) when that
+              outlet changes.
+            </p>
             <ul className="list-disc list-inside space-y-1 pl-1">
-              <li>Low stock — ingredient below reorder level at an outlet</li>
-              <li>Overdue checklists — runs past due date not yet completed</li>
-              <li>Maintenance reminders — scheduled checklist due dates</li>
+              <li>New kitchen orders — staff+ (opens Kitchen)</li>
+              <li>Paid checks — manager+ finance (opens Finance)</li>
+              <li>Low stock — manager+ inventory</li>
+              <li>Overdue / maintenance checklists — assigned person</li>
             </ul>
             <p>
-              Mark individual notifications read, mark all read, or clear them. Notifications are
-              personal to your account.
+              Mark individual alerts read, mark all read, or clear them. Alerts are personal;
+              live board sync is shared for everyone on the outlet.
             </p>
           </DocSection>
 
@@ -491,8 +519,8 @@ export default function DocsPage() {
             </p>
             <p>
               <strong className="text-foreground">During service:</strong> Staff seat tables and
-              add orders from the menu → managers watch stock if items sell out → update menu
-              availability if needed.
+              add orders (search the menu) → Kitchen board updates live → managers watch stock if
+              items sell out.
             </p>
             <p>
               <strong className="text-foreground">Closing shift:</strong> Settle &amp; pay

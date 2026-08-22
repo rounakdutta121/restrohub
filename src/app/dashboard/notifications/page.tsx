@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,8 @@ import { DeleteButton, apiDelete } from "@/components/ui/delete-button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { RestoIcon, type RestoIconName } from "@/components/brand/icons";
 import { toast } from "sonner";
+import { useOutlet } from "@/hooks/use-outlet";
+import { useOutletLive } from "@/hooks/use-outlet-live";
 
 interface Notification {
   id: string;
@@ -22,25 +24,36 @@ interface Notification {
 
 const typeIcons: Record<string, RestoIconName> = {
   low_stock: "stock",
+  new_order: "chef",
+  order_settled: "finance",
+  checklist_due: "clock",
   overdue_checklist: "clock",
+  maintenance_due: "maintenance",
   maintenance: "maintenance",
 };
 
 export default function NotificationsPage() {
+  const { outlet } = useOutlet();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [clearOpen, setClearOpen] = useState(false);
   const [clearing, setClearing] = useState(false);
 
-  function load() {
-    setLoading(true);
-    fetch("/api/notifications")
+  const load = useCallback((opts?: { silent?: boolean }) => {
+    if (!opts?.silent) setLoading(true);
+    fetch("/api/notifications", { cache: "no-store" })
       .then((r) => r.json())
       .then((d) => Array.isArray(d) && setNotifications(d))
-      .finally(() => setLoading(false));
-  }
+      .finally(() => {
+        if (!opts?.silent) setLoading(false);
+      });
+  }, []);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  useOutletLive(outlet?.id, () => load({ silent: true }));
 
   async function markAllRead() {
     await fetch("/api/notifications", {
@@ -78,7 +91,7 @@ export default function NotificationsPage() {
       <div className="relative">
         <RestoPageHeader
           title="Notifications"
-          subtitle="Stock alerts, overdue prep & maintenance"
+          subtitle="Live alerts by role — stock, kitchen, finance, and checklists"
           icon="bell"
           image="/images/resto-kitchen.png"
         />

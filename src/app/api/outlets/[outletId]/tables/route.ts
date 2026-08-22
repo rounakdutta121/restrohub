@@ -5,6 +5,8 @@ import { orderSubtotal } from "@/lib/order-math";
 import { createOrderIncomeEntry, reverseOrderIncomeEntry } from "@/lib/order-finance";
 import { applyOrderStockChange } from "@/lib/stock-movements";
 import { writeAuditLog } from "@/lib/audit";
+import { bumpOutletOps } from "@/lib/outlet-live";
+import { notifyOutletManagers, notifyOutletMembers } from "@/lib/notifications";
 import type { Role } from "@/lib/roles";
 
 type OrderItemInput = { menuItemId: string; quantity?: number; notes?: string };
@@ -33,6 +35,8 @@ async function resolveMenuItems(outletId: string, items: OrderItemInput[]) {
       price: menuItem.price,
       quantity: qty,
       notes: item.notes?.trim() || null,
+      kitchenStatus: "pending",
+      sentToKitchenAt: new Date(),
     });
   }
 
@@ -117,6 +121,7 @@ export async function POST(
         outletId,
       },
     });
+    await bumpOutletOps(outletId);
     return NextResponse.json(table);
   }
 
@@ -166,6 +171,15 @@ export async function POST(
       after: { tableId: body.tableId, guestName: body.guestName },
     });
 
+    if (orderItems.length) {
+      await notifyOutletManagers(
+        outletId,
+        "new_order",
+        `New order · Table ${table.label} · ${orderItems.length} item(s) · ${body.guestName}`
+      );
+    }
+
+    await bumpOutletOps(outletId);
     return NextResponse.json({ table: { ...table, status: "occupied" }, allocation });
   }
 
@@ -176,7 +190,10 @@ export async function POST(
         status: "active",
         table: { outletId },
       },
-      include: { order: { include: { items: true } } },
+      include: {
+        order: { include: { items: true } },
+        table: true,
+      },
     });
 
     if (!allocation) {
@@ -222,6 +239,13 @@ export async function POST(
       }
     }
 
+    await notifyOutletManagers(
+      outletId,
+      "new_order",
+      `Kitchen · Table ${allocation.table.label} · +${newItems.length} item(s)`
+    );
+    await bumpOutletOps(outletId);
+
     return NextResponse.json({
       order,
       total: order ? orderSubtotal(order.items) : 0,
@@ -246,6 +270,7 @@ export async function POST(
       where: { id: item.orderId },
       data: { subtotal: orderSubtotal(remaining) },
     });
+    await bumpOutletOps(outletId);
     return NextResponse.json({ success: true });
   }
 
@@ -263,14 +288,57 @@ export async function POST(
 
     await prisma.tableOrderItem.update({
       where: { id: item.id },
-      data: { voided: true },
+      data: { voided: true, kitchenStatus: "cancelled" },
     });
     const remaining = await prisma.tableOrderItem.findMany({ where: { orderId: item.orderId } });
     await prisma.tableOrder.update({
       where: { id: item.orderId },
       data: { subtotal: orderSubtotal(remaining) },
     });
+    await bumpOutletOps(outletId);
     return NextResponse.json({ success: true });
+  }
+
+  if (action === "kitchen_set_status") {
+    const status = body.status as string;
+    if (!["pending", "preparing", "ready", "cancelled"].includes(status)) {
+      return NextResponse.json({ error: "Invalid kitchen status" }, { status: 400 });
+    }
+
+    if (body.itemId) {
+      const item = await prisma.tableOrderItem.findFirst({
+        where: {
+          id: body.itemId,
+          voided: false,
+          order: {
+            status: "open",
+            allocation: { status: "active", table: { outletId } },
+          },
+        },
+      });
+      if (!item) return NextResponse.json({ error: "Order item not found" }, { status: 404 });
+      await prisma.tableOrderItem.update({
+        where: { id: item.id },
+        data: { kitchenStatus: status },
+      });
+    } else if (body.orderId) {
+      await prisma.tableOrderItem.updateMany({
+        where: {
+          orderId: body.orderId,
+          voided: false,
+          order: {
+            status: "open",
+            allocation: { status: "active", table: { outletId } },
+          },
+        },
+        data: { kitchenStatus: status },
+      });
+    } else {
+      return NextResponse.json({ error: "itemId or orderId required" }, { status: 400 });
+    }
+
+    await bumpOutletOps(outletId);
+    return NextResponse.json({ success: true, status });
   }
 
   /** Settle & pay — only path that creates revenue + successful turn */
@@ -340,6 +408,11 @@ export async function POST(
       note: `Sale · ${table.label}`,
     });
 
+    await prisma.tableOrderItem.updateMany({
+      where: { orderId: order.id, kitchenStatus: { not: "cancelled" } },
+      data: { kitchenStatus: "cancelled" },
+    });
+
     await writeAuditLog({
       workspaceId,
       outletId,
@@ -350,6 +423,13 @@ export async function POST(
       after: { subtotal, paymentMethod, financeEntryId: finance.id },
     });
 
+    await notifyOutletMembers(
+      outletId,
+      "order_settled",
+      `Paid · Table ${table.label} · ${allocation.guestName}`,
+      { skipBump: true }
+    );
+    await bumpOutletOps(outletId);
     return NextResponse.json({
       success: true,
       order,
@@ -379,6 +459,10 @@ export async function POST(
           subtotal: orderSubtotal(allocation.order.items),
         },
       });
+      await prisma.tableOrderItem.updateMany({
+        where: { orderId: allocation.order.id },
+        data: { kitchenStatus: "cancelled" },
+      });
     }
 
     await prisma.tableAllocation.update({
@@ -400,6 +484,7 @@ export async function POST(
       note: reason,
     });
 
+    await bumpOutletOps(outletId);
     return NextResponse.json({ success: true, table: { ...table, status: "available" } });
   }
 
@@ -448,6 +533,11 @@ export async function POST(
           note: isComp ? `Comp waste · ${table.label}` : `Walkout waste · ${table.label}`,
         });
       }
+
+      await prisma.tableOrderItem.updateMany({
+        where: { orderId: order.id },
+        data: { kitchenStatus: "cancelled" },
+      });
     }
 
     await prisma.tableAllocation.update({
@@ -473,6 +563,7 @@ export async function POST(
       after: { recordWaste: !!body.recordWaste },
     });
 
+    await bumpOutletOps(outletId);
     return NextResponse.json({ success: true, table: { ...table, status: "available" } });
   }
 
@@ -537,6 +628,7 @@ export async function POST(
       before: { status: "paid", financeEntryId: order.financeEntryId },
     });
 
+    await bumpOutletOps(outletId);
     return NextResponse.json({ success: true });
   }
 
@@ -556,6 +648,7 @@ export async function POST(
       where: { id: body.tableId },
       data: { status: "reserved" },
     });
+    await bumpOutletOps(outletId);
     return NextResponse.json(table);
   }
 
@@ -575,5 +668,6 @@ export async function DELETE(
   if (!table) return NextResponse.json({ error: "Table not found" }, { status: 404 });
 
   await prisma.restaurantTable.delete({ where: { id: tableId } });
+  await bumpOutletOps(outletId);
   return NextResponse.json({ success: true });
 }

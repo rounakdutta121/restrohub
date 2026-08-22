@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/select";
 import { OrganizationProvider, useOrganization } from "@/hooks/use-organization";
 import { OutletProvider, useOutlet } from "@/hooks/use-outlet";
+import { OutletLiveProvider } from "@/hooks/use-outlet-live";
 import { usePermissions } from "@/hooks/use-permissions";
 import { NotificationBell } from "@/components/notification-bell";
 import { LogoMark } from "@/components/brand/logo";
@@ -39,6 +40,7 @@ const operationsNav: NavItem[] = [
   { href: "/dashboard/outlets", label: "Outlets", icon: "outlets" },
   { href: "/dashboard/menus", label: "Menus", icon: "menus", needsOutlet: true },
   { href: "/dashboard/tables", label: "Tables", icon: "tables", needsOutlet: true },
+  { href: "/dashboard/kitchen", label: "Kitchen", icon: "chef", needsOutlet: true },
   { href: "/dashboard/inventory", label: "Inventory", icon: "stock", needsOutlet: true },
 ];
 
@@ -58,12 +60,13 @@ const manageNav: NavItem[] = [
 
 const mobilePrimary: NavItem[] = [
   { href: "/dashboard", label: "Home", icon: "home" },
-  { href: "/dashboard/outlets", label: "Outlets", icon: "outlets" },
-  { href: "/dashboard/menus", label: "Menus", icon: "menus", needsOutlet: true },
   { href: "/dashboard/tables", label: "Tables", icon: "tables", needsOutlet: true },
+  { href: "/dashboard/kitchen", label: "Kitchen", icon: "chef", needsOutlet: true },
+  { href: "/dashboard/menus", label: "Menus", icon: "menus", needsOutlet: true },
 ];
 
 const mobileMore: NavItem[] = [
+  { href: "/dashboard/outlets", label: "Outlets", icon: "outlets" },
   { href: "/dashboard/checklists", label: "Checklists", icon: "prep" },
   { href: "/dashboard/runs", label: "Runs", icon: "runs" },
   { href: "/dashboard/inventory", label: "Inventory", icon: "stock", needsOutlet: true },
@@ -376,7 +379,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <OrganizationProvider>
       <OutletProvider>
-        <DashboardShell>{children}</DashboardShell>
+        <OutletLiveProvider>
+          <DashboardShell>{children}</DashboardShell>
+        </OutletLiveProvider>
       </OutletProvider>
     </OrganizationProvider>
   );

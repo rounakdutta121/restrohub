@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { requireOrgMember, isOrgAdmin } from "@/lib/permissions";
+import { bumpOutletOps } from "@/lib/outlet-live";
 
 async function authorizeRunAccess(runId: string) {
   const run = await prisma.checklistRun.findUnique({
@@ -121,6 +122,8 @@ export async function PATCH(
     },
   });
 
+  const bumpId = updated?.outletId || updated?.sop?.outletId;
+  if (bumpId) await bumpOutletOps(bumpId);
   return NextResponse.json(updated);
 }
 
@@ -141,6 +144,8 @@ export async function DELETE(
     return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
   }
 
+  const bumpId = access.run.outletId || access.run.sop.outletId;
   await prisma.checklistRun.delete({ where: { id: runId } });
+  if (bumpId) await bumpOutletOps(bumpId);
   return NextResponse.json({ success: true });
 }

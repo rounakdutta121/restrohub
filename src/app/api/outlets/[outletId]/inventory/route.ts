@@ -4,6 +4,7 @@ import { requireOutletAccess } from "@/lib/permissions";
 import { checkLowStock } from "@/lib/notifications";
 import { parseStockNumber, sanitizeUnitInput } from "@/lib/units";
 import { writeAuditLog } from "@/lib/audit";
+import { bumpOutletOps } from "@/lib/outlet-live";
 
 export async function GET(
   _req: Request,
@@ -59,6 +60,7 @@ export async function POST(
         workspaceId: auth.workspace.id,
       },
     });
+    await bumpOutletOps(outletId);
     return NextResponse.json(ingredient);
   }
 
@@ -119,6 +121,7 @@ export async function POST(
     });
 
     await checkLowStock(outletId);
+    await bumpOutletOps(outletId);
     return NextResponse.json(stock);
   }
 
@@ -226,5 +229,6 @@ export async function DELETE(
     return NextResponse.json({ error: "Unknown action" }, { status: 400 });
   }
 
+  await bumpOutletOps(outletId);
   return NextResponse.json({ success: true });
 }

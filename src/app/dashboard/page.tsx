@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,6 +14,7 @@ import { formatCurrency } from "@/lib/currency";
 import { RestoLoader, RestoCardSkeleton } from "@/components/ui/resto-loader";
 import { RestoIcon, type RestoIconName } from "@/components/brand/icons";
 import { SetupChecklist } from "@/components/brand/setup-checklist";
+import { useOutletLive } from "@/hooks/use-outlet-live";
 
 interface DashboardData {
   outlets: { id: string; name: string; city: string | null }[];
@@ -40,12 +41,18 @@ export default function DashboardPage() {
   const { can } = usePermissions();
   const [data, setData] = useState<DashboardData | null>(null);
 
-  useEffect(() => {
+  const load = useCallback(() => {
     if (!organization) return;
     const params = new URLSearchParams({ workspaceId: organization.id });
     if (outlet) params.set("outletId", outlet.id);
     fetchJson<DashboardData>(`/api/dashboard?${params}`).then(setData);
   }, [organization, outlet]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  useOutletLive(outlet?.id, () => load());
 
   if (!organization) {
     return (

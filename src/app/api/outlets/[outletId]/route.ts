@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireOutletAccess, slugify } from "@/lib/permissions";
+import { bumpOutletOps } from "@/lib/outlet-live";
 
 export async function GET(
   _req: Request,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,6 +13,7 @@ import { RestoLoader } from "@/components/ui/resto-loader";
 import { DeleteButton, apiDelete } from "@/components/ui/delete-button";
 import { formatCurrency, formatSignedCurrency } from "@/lib/currency";
 import { toast } from "sonner";
+import { useOutletLive } from "@/hooks/use-outlet-live";
 
 interface FinanceEntry {
   id: string;
@@ -49,19 +50,28 @@ export default function FinancePage() {
     note: "",
   });
 
-  function load() {
-    if (!outlet) return;
-    setLoading(true);
-    fetch(`/api/outlets/${outlet.id}/finance`)
-      .then((r) => r.json())
-      .then((d) => {
-        setEntries(d.entries || []);
-        setSummary(d.summary);
-      })
-      .finally(() => setLoading(false));
-  }
+  const load = useCallback(
+    (opts?: { silent?: boolean }) => {
+      if (!outlet) return;
+      if (!opts?.silent) setLoading(true);
+      fetch(`/api/outlets/${outlet.id}/finance`, { cache: "no-store" })
+        .then((r) => r.json())
+        .then((d) => {
+          setEntries(d.entries || []);
+          setSummary(d.summary);
+        })
+        .finally(() => {
+          if (!opts?.silent) setLoading(false);
+        });
+    },
+    [outlet]
+  );
 
-  useEffect(() => { load(); }, [outlet]);
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  useOutletLive(outlet?.id, () => load({ silent: true }));
 
   async function addEntry() {
     if (!outlet) return;

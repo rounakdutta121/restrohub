@@ -104,6 +104,7 @@ model Outlet {
   timezone     String            @default("UTC")
   currency     String            @default("USD")
   isActive     Boolean           @default(true)
+  opsVersion   Int               @default(0)
   workspaceId  String            @db.ObjectId
   workspace    Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   createdAt    DateTime          @default(now())
@@ -268,16 +269,18 @@ model TableOrder {
 }
 
 model TableOrderItem {
-  id         String     @id @default(auto()) @map("_id") @db.ObjectId
-  orderId    String     @db.ObjectId
-  menuItemId String?    @db.ObjectId
-  name       String
-  price      Float
-  quantity   Int        @default(1)
-  notes      String?
-  voided     Boolean    @default(false)
-  order      TableOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  menuItem   MenuItem?  @relation(fields: [menuItemId], references: [id], onDelete: SetNull)
+  id              String     @id @default(auto()) @map("_id") @db.ObjectId
+  orderId         String     @db.ObjectId
+  menuItemId      String?    @db.ObjectId
+  name            String
+  price           Float
+  quantity        Int        @default(1)
+  notes           String?
+  voided          Boolean    @default(false)
+  kitchenStatus   String     @default("pending")
+  sentToKitchenAt DateTime?
+  order           TableOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItem        MenuItem?  @relation(fields: [menuItemId], references: [id], onDelete: SetNull)
 }
 
 model FinanceEntry {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -28,6 +28,7 @@ import { RestoPageHeader, RestoEmptyState } from "@/components/brand/page-header
 import { RestoLoader } from "@/components/ui/resto-loader";
 import { DeleteButton, apiDelete } from "@/components/ui/delete-button";
 import { toast } from "sonner";
+import { useOutletLive } from "@/hooks/use-outlet-live";
 
 interface Run {
   id: string;
@@ -66,33 +67,51 @@ export default function RunsPage() {
   const [expandedRun, setExpandedRun] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const reloadRuns = useCallback((opts?: { silent?: boolean }) => {
     if (!organization) return;
-    setLoading(true);
-    fetch(`/api/workspaces/${organization.id}/sops`)
+    if (!opts?.silent) {
+      setLoading(true);
+      setRuns([]);
+    }
+    fetch(`/api/workspaces/${organization.id}/sops`, { cache: "no-store" })
       .then((r) => r.json())
-      .then((d) => {
-        if (Array.isArray(d)) {
-          setSops(d);
-          d.forEach((sop: SOP) => {
-            fetch(`/api/workspaces/${organization.id}/sops/${sop.id}/runs`)
-              .then((r) => r.json())
-              .then((runs: Run[]) => {
-                if (Array.isArray(runs)) {
-                  setRuns((prev) => {
-                    const ids = new Set(prev.map((r) => r.id));
-                    return [...prev, ...runs.filter((r) => !ids.has(r.id))];
-                  });
-                }
-              });
-          });
+      .then(async (d) => {
+        if (!Array.isArray(d)) return;
+        setSops(d);
+        const batches = await Promise.all(
+          d.map((sop: SOP) =>
+            fetch(`/api/workspaces/${organization.id}/sops/${sop.id}/runs`, {
+              cache: "no-store",
+            }).then((r) => r.json())
+          )
+        );
+        const next: Run[] = [];
+        const seen = new Set<string>();
+        for (const runs of batches) {
+          if (!Array.isArray(runs)) continue;
+          for (const run of runs) {
+            if (seen.has(run.id)) continue;
+            seen.add(run.id);
+            next.push(run);
+          }
         }
+        setRuns(next);
+      })
+      .finally(() => {
+        if (!opts?.silent) setLoading(false);
       });
-    fetch(`/api/workspaces/${organization.id}/members`)
-      .then((r) => r.json())
-      .then((d) => Array.isArray(d) && setMembers(d))
-      .finally(() => setLoading(false));
+    if (!opts?.silent) {
+      fetch(`/api/workspaces/${organization.id}/members`)
+        .then((r) => r.json())
+        .then((d) => Array.isArray(d) && setMembers(d));
+    }
   }, [organization]);
+
+  useEffect(() => {
+    reloadRuns();
+  }, [reloadRuns]);
+
+  useOutletLive(outlet?.id, () => reloadRuns({ silent: true }));
 
   async function createRun() {
     if (!organization || !selectedSop) return;
@@ -104,6 +123,7 @@ export default function RunsPage() {
         body: JSON.stringify({
           assignedToId: selectedMember || undefined,
           dueDate: dueDate || undefined,
+          outletId: outlet?.id,
         }),
       }
     );

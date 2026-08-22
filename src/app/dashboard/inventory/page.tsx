@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,6 +16,7 @@ import { RestoEmptyState } from "@/components/brand/page-header";
 import { DeleteButton, apiDelete } from "@/components/ui/delete-button";
 import { toast } from "sonner";
 import { toastApiError } from "@/lib/toast-errors";
+import { useOutletLive } from "@/hooks/use-outlet-live";
 
 interface Ingredient {
   id: string;
@@ -72,27 +73,34 @@ export default function InventoryPage() {
   });
   const [loading, setLoading] = useState(true);
 
-  async function load() {
-    if (!outlet) return;
-    setLoading(true);
-    const d = await fetchJson<{
-      ingredients: Ingredient[];
-      stock: Stock[];
-      menuItems?: MenuItemOption[];
-      recipes?: RecipeLine[];
-    }>(`/api/outlets/${outlet.id}/inventory`);
-    if (d) {
-      setIngredients(d.ingredients || []);
-      setStock(d.stock || []);
-      setMenuItems(d.menuItems || []);
-      setRecipes(d.recipes || []);
-    }
-    setLoading(false);
-  }
+  const load = useCallback(
+    async (opts?: { silent?: boolean }) => {
+      if (!outlet) return;
+      if (!opts?.silent) setLoading(true);
+      const d = await fetchJson<{
+        ingredients: Ingredient[];
+        stock: Stock[];
+        menuItems?: MenuItemOption[];
+        recipes?: RecipeLine[];
+      }>(`/api/outlets/${outlet.id}/inventory`);
+      if (d) {
+        setIngredients(d.ingredients || []);
+        setStock(d.stock || []);
+        setMenuItems(d.menuItems || []);
+        setRecipes(d.recipes || []);
+      }
+      if (!opts?.silent) setLoading(false);
+    },
+    [outlet]
+  );
 
   useEffect(() => {
     load();
-  }, [outlet]);
+  }, [load]);
+
+  useOutletLive(outlet?.id, () => {
+    void load({ silent: true });
+  });
 
   function onSelectIngredient(id: string) {
     const existing = stock.find((s) => s.ingredient.id === id);

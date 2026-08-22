@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,7 @@ import { DeleteButton, apiDelete } from "@/components/ui/delete-button";
 import { toast } from "sonner";
 import { toastApiError } from "@/lib/toast-errors";
 import QRCode from "qrcode";
+import { useOutletLive } from "@/hooks/use-outlet-live";
 
 interface MenuCategory {
   id: string;
@@ -34,15 +35,26 @@ export default function MenusPage() {
   const [itemForm, setItemForm] = useState({ categoryId: "", name: "", price: "", description: "" });
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
 
+  const load = useCallback(
+    (opts?: { silent?: boolean }) => {
+      if (!outlet) return;
+      if (!opts?.silent) {
+        setLoading(true);
+        setQrDataUrl(null);
+      }
+      fetchJson<MenuCategory[]>(`/api/outlets/${outlet.id}/menus`).then((d) => {
+        if (Array.isArray(d)) setCategories(d);
+        if (!opts?.silent) setLoading(false);
+      });
+    },
+    [outlet]
+  );
+
   useEffect(() => {
-    if (!outlet) return;
-    setLoading(true);
-    setQrDataUrl(null);
-    fetchJson<MenuCategory[]>(`/api/outlets/${outlet.id}/menus`).then((d) => {
-      if (Array.isArray(d)) setCategories(d);
-      setLoading(false);
-    });
-  }, [outlet]);
+    load();
+  }, [load]);
+
+  useOutletLive(outlet?.id, () => load({ silent: true }));
 
   useEffect(() => {
     if (!outlet || loading) return;

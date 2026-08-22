@@ -24,6 +24,7 @@ import { RestoPageHeader, RestoEmptyState } from "@/components/brand/page-header
 import { RestoLoader } from "@/components/ui/resto-loader";
 import { formatCurrency } from "@/lib/currency";
 import { toast } from "sonner";
+import { useOutletLive } from "@/hooks/use-outlet-live";
 
 type AnalyticsPayload = {
   range: { from: string; to: string };
@@ -125,6 +126,15 @@ export default function AnalyticsPage() {
   useEffect(() => {
     load();
   }, [organization?.id, range.from, range.to, filterOutlet, canView]);
+
+  useOutletLive(outlet?.id, () => {
+    if (!organization || !canView) return;
+    const qs = new URLSearchParams({ from: range.from, to: range.to });
+    if (filterOutlet) qs.set("outletId", filterOutlet);
+    fetch(`/api/workspaces/${organization.id}/analytics?${qs}`, { cache: "no-store" })
+      .then((r) => r.json())
+      .then((d) => setData(d));
+  });
 
   const currency = useMemo(() => {
     if (!data?.outlets?.length) return outlet?.currency ?? "INR";

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireOutletAccess } from "@/lib/permissions";
 import { writeAuditLog } from "@/lib/audit";
+import { bumpOutletOps } from "@/lib/outlet-live";
 
 export async function GET(
   req: Request,
@@ -73,6 +74,7 @@ export async function POST(
     after: { type, amount: entry.amount, category },
   });
 
+  await bumpOutletOps(outletId);
   return NextResponse.json(entry);
 }
 
@@ -110,5 +112,6 @@ export async function DELETE(
     before: { type: entry.type, amount: entry.amount, category: entry.category },
   });
 
+  await bumpOutletOps(outletId);
   return NextResponse.json({ success: true });
 }
