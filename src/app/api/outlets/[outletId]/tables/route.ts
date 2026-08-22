@@ -273,7 +273,7 @@ export async function POST(
     await notifyOutletManagers(
       outletId,
       "new_order",
-      `Kitchen · Table ${allocation.table.label} · +${newItems.length} item(s)`
+      `Kitchen · Table ${allocation.table?.label ?? "—"} · +${newItems.length} item(s)`
     );
     await bumpOutletOps(outletId);
 
@@ -645,7 +645,7 @@ export async function POST(
       items: order.items,
       type: "reverse_sale",
       createdById: actorId,
-      note: `Void restock · ${order.allocation.table.label}`,
+      note: `Void restock · ${order.allocation.table?.label ?? "—"}`,
     });
 
     await writeAuditLog({
