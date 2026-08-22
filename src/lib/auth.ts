@@ -39,7 +39,7 @@ if (isGoogleAuthConfigured()) {
 }
 
 export const authOptions: NextAuthOptions = {
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: process.env.NEXTAUTH_SECRET?.trim(),
   session: { strategy: "jwt" },
   pages: { signIn: "/login" },
   providers,

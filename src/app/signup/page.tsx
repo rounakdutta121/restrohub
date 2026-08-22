@@ -81,7 +81,7 @@ export default function SignupPage() {
           </div>
         )}
 
-        <form onSubmit={onSubmit} className="space-y-4">
+        <form method="post" onSubmit={onSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="name">Your name</Label>
             <Input id="name" name="name" required placeholder="Chef Rahul" className="rounded-lg" />

@@ -5,7 +5,7 @@
 export function getAppUrl(): string {
   const fromPublic = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
   if (fromPublic) return fromPublic;
-  if (process.env.NEXTAUTH_URL) return process.env.NEXTAUTH_URL.replace(/\/$/, "");
+  if (process.env.NEXTAUTH_URL) return process.env.NEXTAUTH_URL.trim().replace(/\/$/, "");
   if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL.replace(/\/$/, "")}`;
   // Production fallback so OG/canonical stay correct if env is missing at build time
   if (process.env.NODE_ENV === "production") {

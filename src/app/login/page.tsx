@@ -63,7 +63,7 @@ export default function LoginPage() {
           </div>
         )}
 
-        <form onSubmit={onSubmit} className="space-y-4">
+        <form method="post" onSubmit={onSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input id="email" name="email" type="email" required placeholder="chef@yourrestaurant.com" className="rounded-lg" />
