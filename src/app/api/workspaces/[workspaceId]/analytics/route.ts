@@ -58,14 +58,18 @@ export async function GET(
   }
 
   const tableFilter = { outletId: { in: outletIds } };
+  const allocationInOutlet = {
+    OR: [{ outletId: { in: outletIds } }, { table: tableFilter }],
+  };
 
+  try {
   const [paidOrders, prevPaidOrders, allocations, financeEntries, prevFinance, tables, stock] =
     await Promise.all([
       prisma.tableOrder.findMany({
         where: {
           status: "paid",
           paidAt: { gte: from, lte: to },
-          allocation: { table: tableFilter },
+          allocation: allocationInOutlet,
         },
         include: {
           items: true,
@@ -80,15 +84,15 @@ export async function GET(
         where: {
           status: "paid",
           paidAt: { gte: prevFrom, lte: prevTo },
-          allocation: { table: tableFilter },
+          allocation: allocationInOutlet,
         },
         select: { subtotal: true },
       }),
       prisma.tableAllocation.findMany({
         where: {
           endTime: { gte: from, lte: to },
-          table: tableFilter,
           status: { in: ["completed", "cancelled", "walkout"] },
+          ...allocationInOutlet,
         },
         include: {
           order: { select: { status: true, closeReason: true, subtotal: true } },
@@ -127,7 +131,7 @@ export async function GET(
       status: "voided",
       voidedAt: { gte: from, lte: to },
       closeReason: { startsWith: "void:" },
-      allocation: { table: tableFilter },
+      allocation: allocationInOutlet,
     },
   });
   const comps = await prisma.tableOrder.count({
@@ -135,7 +139,7 @@ export async function GET(
       status: "voided",
       voidedAt: { gte: from, lte: to },
       closeReason: { startsWith: "comp:" },
-      allocation: { table: tableFilter },
+      allocation: allocationInOutlet,
     },
   });
 
@@ -168,7 +172,7 @@ export async function GET(
     where: {
       endTime: { gte: prevFrom, lte: prevTo },
       status: "completed",
-      table: tableFilter,
+      ...allocationInOutlet,
       order: { status: "paid" },
     },
   });
@@ -177,11 +181,11 @@ export async function GET(
 
   // By outlet
   const byOutlet = outlets.map((o) => {
-    const oOrders = paidOrders.filter((ord) => ord.allocation.table.outletId === o.id);
+    const oOrders = paidOrders.filter((ord) => (ord.allocation.table?.outletId ?? ord.allocation.outletId) === o.id);
     const oFin = activeFinance.filter((e) => e.outletId === o.id);
     const oIncome = oFin.filter((e) => e.type === "income").reduce((s, e) => s + e.amount, 0);
     const oExpense = oFin.filter((e) => e.type === "expense").reduce((s, e) => s + e.amount, 0);
-    const oTurns = successfulTurns.filter((a) => a.table.outletId === o.id).length;
+    const oTurns = successfulTurns.filter((a) => (a.table?.outletId ?? a.outletId) === o.id).length;
     return {
       outletId: o.id,
       name: o.name,
@@ -256,6 +260,7 @@ export async function GET(
     });
   }
   for (const a of successfulTurns) {
+    if (!a.table) continue;
     const row = tableMap.get(a.table.id);
     if (!row) continue;
     row.turns += 1;
@@ -276,8 +281,8 @@ export async function GET(
       paymentMethod: o.paymentMethod,
       guestName: o.allocation.guestName,
       guestCount: o.allocation.guestCount,
-      tableLabel: o.allocation.table.label,
-      outletId: o.allocation.table.outletId,
+      tableLabel: o.allocation.table?.label ?? o.allocation.mode ?? "—",
+      outletId: o.allocation.table?.outletId ?? o.allocation.outletId ?? outletIds[0],
       items: o.items
         .filter((i) => !i.voided)
         .map((i) => ({
@@ -333,6 +338,13 @@ export async function GET(
     lowStock,
     cogsComplete: recipeCount > 0,
   });
+  } catch (e) {
+    console.error("[analytics]", e);
+    return NextResponse.json(
+      { error: e instanceof Error ? e.message : "Failed to load analytics" },
+      { status: 500 }
+    );
+  }
 }
 
 function emptyKpis() {

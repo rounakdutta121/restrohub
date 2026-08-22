@@ -25,6 +25,12 @@ interface Notification {
 const typeIcons: Record<string, RestoIconName> = {
   low_stock: "stock",
   new_order: "chef",
+  takeaway_order: "chef",
+  waitlist_order: "tables",
+  waitlist_seated: "tables",
+  reservation_order: "tables",
+  reservation_reminder: "bell",
+  reservation_clear_table: "tables",
   order_settled: "finance",
   checklist_due: "clock",
   overdue_checklist: "clock",

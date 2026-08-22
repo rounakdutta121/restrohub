@@ -22,7 +22,8 @@ type KitchenItem = {
 type Ticket = {
   allocationId: string;
   orderId: string;
-  tableId: string;
+  mode?: string;
+  tableId: string | null;
   tableLabel: string;
   guestName: string;
   guestCount: number;
@@ -57,7 +58,15 @@ export default function KitchenPage() {
   const load = useCallback(() => {
     if (!outlet) return;
     fetch(`/api/outlets/${outlet.id}/kitchen`, { cache: "no-store" })
-      .then((r) => r.json())
+      .then(async (r) => {
+        const text = await r.text();
+        if (!text) return { tickets: [] };
+        try {
+          return JSON.parse(text);
+        } catch {
+          return { tickets: [] };
+        }
+      })
       .then((d) => {
         const next: Ticket[] = d.tickets || [];
         const pendingIds = new Set(
@@ -79,6 +88,7 @@ export default function KitchenPage() {
         primed.current = true;
         setTickets(next);
       })
+      .catch(() => setTickets([]))
       .finally(() => setLoading(false));
   }, [outlet]);
 
@@ -168,6 +178,11 @@ export default function KitchenPage() {
               <CardHeader className="pb-2">
                 <div className="flex items-start justify-between gap-2">
                   <CardTitle className="resto-heading text-lg">{t.tableLabel}</CardTitle>
+                    {t.mode && t.mode !== "dine_in" && (
+                      <Badge variant="outline" className="capitalize text-[10px] ml-2">
+                        {t.mode}
+                      </Badge>
+                    )}
                   <Badge variant="outline">{timeAgo(t.oldestSentAt)}</Badge>
                 </div>
                 <p className="text-sm text-muted-foreground">

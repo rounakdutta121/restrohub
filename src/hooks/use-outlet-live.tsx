@@ -55,7 +55,9 @@ export function OutletLiveProvider({ children }: { children: ReactNode }) {
         { cache: "no-store" }
       );
       if (!res.ok) return;
-      const data = (await res.json()) as LivePayload;
+      const text = await res.text();
+      if (!text) return;
+      const data = JSON.parse(text) as LivePayload;
       if (typeof data.unread === "number") setUnread(data.unread);
 
       const serverV = Number(data.opsVersion) || 0;

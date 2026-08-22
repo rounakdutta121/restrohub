@@ -23,6 +23,7 @@ import {
   type MenuCategory,
   type CartLine,
 } from "@/components/tables/menu-order-picker";
+import { ServiceQueues, type ServiceOrder } from "@/components/tables/service-queues";
 import { orderSubtotal } from "@/lib/order-math";
 import { toast } from "sonner";
 import { formatCurrency } from "@/lib/currency";
@@ -67,6 +68,7 @@ export default function TablesPage() {
   const canManageSetup = can("manageTableSetup");
   const canFinance = can("manageFinance");
   const [tables, setTables] = useState<Table[]>([]);
+  const [serviceOrders, setServiceOrders] = useState<ServiceOrder[]>([]);
   const [menu, setMenu] = useState<MenuCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [newTable, setNewTable] = useState({ label: "", capacity: "4" });
@@ -88,30 +90,59 @@ export default function TablesPage() {
       if (!outlet) return;
       if (!opts?.silent) setLoading(true);
 
+      async function readJson(res: Response) {
+        const text = await res.text();
+        if (!res.ok || !text) return null;
+        try {
+          return JSON.parse(text);
+        } catch {
+          return null;
+        }
+      }
+
+      function applyTablesPayload(tablesData: unknown) {
+        if (Array.isArray(tablesData)) {
+          setTables(tablesData);
+          return;
+        }
+        if (
+          tablesData &&
+          typeof tablesData === "object" &&
+          Array.isArray((tablesData as { tables?: unknown }).tables)
+        ) {
+          const payload = tablesData as {
+            tables: Table[];
+            serviceOrders?: ServiceOrder[];
+          };
+          setTables(payload.tables);
+          if (Array.isArray(payload.serviceOrders)) {
+            setServiceOrders(payload.serviceOrders);
+          }
+        }
+      }
+
       const tablesReq = fetch(`/api/outlets/${outlet.id}/tables`, {
         cache: "no-store",
-      }).then((r) => r.json());
+      }).then(readJson);
 
       // Live polls only need tables; menus change rarely.
       if (opts?.silent) {
         tablesReq
-          .then((tablesData) => {
-            if (Array.isArray(tablesData)) setTables(tablesData);
-          })
-          .catch(() => {});
+          .then(applyTablesPayload)
+          .catch(() => {})
+          .finally(() => {});
         return;
       }
 
       Promise.all([
         tablesReq,
-        fetch(`/api/outlets/${outlet.id}/menus`, { cache: "no-store" }).then((r) =>
-          r.json()
-        ),
+        fetch(`/api/outlets/${outlet.id}/menus`, { cache: "no-store" }).then(readJson),
       ])
         .then(([tablesData, menuData]) => {
-          if (Array.isArray(tablesData)) setTables(tablesData);
+          applyTablesPayload(tablesData);
           if (Array.isArray(menuData)) setMenu(menuData);
         })
+        .catch(() => {})
         .finally(() => setLoading(false));
     },
     [outlet]
@@ -346,7 +377,7 @@ export default function TablesPage() {
     <div className="space-y-6 w-full animate-fade-in">
       <RestoPageHeader
         title="Tables & Orders"
-        subtitle={`${outlet.name} — seat, order, settle — live across devices`}
+        subtitle={`${outlet.name} — dine-in, takeaway, waitlist & reservations — live`}
         icon="tables"
         image="/images/resto-hero.png"
         action={
@@ -391,6 +422,15 @@ export default function TablesPage() {
           </CardContent>
         )}
       </Card>
+
+      <ServiceQueues
+        outletId={outlet.id}
+        currency={currency}
+        menu={menu}
+        tables={tables}
+        serviceOrders={serviceOrders}
+        onChanged={() => load({ silent: true })}
+      />
 
       {tables.length === 0 ? (
         <RestoEmptyState

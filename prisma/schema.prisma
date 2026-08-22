@@ -114,6 +114,7 @@ model Outlet {
   checklistRuns ChecklistRun[]
   ingredientStock IngredientStock[]
   tables       RestaurantTable[]
+  allocations  TableAllocation[]
   financeEntries FinanceEntry[]
   notifications Notification[]
   stockMovements StockMovement[]
@@ -239,15 +240,26 @@ model RestaurantTable {
 }
 
 model TableAllocation {
-  id         String          @id @default(auto()) @map("_id") @db.ObjectId
-  tableId    String          @db.ObjectId
-  guestName  String
-  guestCount Int             @default(2)
-  startTime  DateTime        @default(now())
-  endTime    DateTime?
-  status     String          @default("active")
-  table      RestaurantTable @relation(fields: [tableId], references: [id], onDelete: Cascade)
-  order      TableOrder?
+  id             String           @id @default(auto()) @map("_id") @db.ObjectId
+  /// Optional on legacy rows; new writes always set this
+  outletId       String?          @db.ObjectId
+  outlet         Outlet?          @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  /// Optional for takeaway / waitlist until seated
+  tableId        String?          @db.ObjectId
+  table          RestaurantTable? @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  guestName      String
+  guestCount     Int              @default(2)
+  guestPhone     String?
+  /// dine_in | takeaway | waitlist | reservation
+  mode           String           @default("dine_in")
+  /// waiting | reserved | active | completed | cancelled
+  status         String           @default("active")
+  startTime      DateTime         @default(now())
+  endTime        DateTime?
+  /// When the reserved party is expected
+  reservedFor    DateTime?
+  reminderSentAt DateTime?
+  order          TableOrder?
 }
 
 model TableOrder {

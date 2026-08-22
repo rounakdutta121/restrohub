@@ -109,6 +109,16 @@ export default function AnalyticsPage() {
     if (outlet?.id && !filterOutlet) setFilterOutlet(outlet.id);
   }, [outlet?.id]);
 
+  async function readJson(res: Response) {
+    const text = await res.text();
+    if (!text) return null;
+    try {
+      return JSON.parse(text) as AnalyticsPayload & { error?: string };
+    } catch {
+      return null;
+    }
+  }
+
   function load() {
     if (!organization || !canView) return;
     setLoading(true);
@@ -118,8 +128,19 @@ export default function AnalyticsPage() {
     });
     if (filterOutlet) qs.set("outletId", filterOutlet);
     fetch(`/api/workspaces/${organization.id}/analytics?${qs}`)
-      .then((r) => r.json())
-      .then((d) => setData(d))
+      .then(async (r) => {
+        const d = await readJson(r);
+        if (!r.ok || !d || d.error) {
+          toast.error(d?.error || "Failed to load analytics");
+          setData(null);
+          return;
+        }
+        setData(d);
+      })
+      .catch(() => {
+        toast.error("Failed to load analytics");
+        setData(null);
+      })
       .finally(() => setLoading(false));
   }
 
@@ -132,8 +153,11 @@ export default function AnalyticsPage() {
     const qs = new URLSearchParams({ from: range.from, to: range.to });
     if (filterOutlet) qs.set("outletId", filterOutlet);
     fetch(`/api/workspaces/${organization.id}/analytics?${qs}`, { cache: "no-store" })
-      .then((r) => r.json())
-      .then((d) => setData(d));
+      .then(async (r) => {
+        const d = await readJson(r);
+        if (r.ok && d && !d.error) setData(d);
+      })
+      .catch(() => {});
   });
 
   const currency = useMemo(() => {

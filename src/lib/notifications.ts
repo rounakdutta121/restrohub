@@ -6,6 +6,12 @@ import { bumpOutletOps } from "./outlet-live";
 /** Which capability must receive each alert type (role hierarchy). */
 export const NOTIFICATION_CAPABILITY: Record<string, Capability> = {
   new_order: "manageTableOrders", // staff+ on that outlet
+  takeaway_order: "manageTableOrders",
+  waitlist_order: "manageTableOrders",
+  reservation_order: "manageTableOrders",
+  reservation_reminder: "manageTableOrders",
+  reservation_clear_table: "manageTableOrders",
+  waitlist_seated: "manageTableOrders",
   low_stock: "manageInventory", // manager+
   order_settled: "viewFinance", // manager+
   checklist_due: "runChecklists", // staff+ (assignee still preferred)

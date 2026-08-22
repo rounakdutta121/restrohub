@@ -7,6 +7,7 @@ import { applyOrderStockChange } from "@/lib/stock-movements";
 import { writeAuditLog } from "@/lib/audit";
 import { bumpOutletOps } from "@/lib/outlet-live";
 import { notifyOutletManagers, notifyOutletMembers } from "@/lib/notifications";
+import { checkReservationReminders, serviceLabel } from "@/lib/service-orders";
 import type { Role } from "@/lib/roles";
 
 type OrderItemInput = { menuItemId: string; quantity?: number; notes?: string };
@@ -82,13 +83,40 @@ export async function GET(
   const auth = await requireOutletAccess(outletId);
   if ("error" in auth) return auth.error;
 
-  const tables = await prisma.restaurantTable.findMany({
-    where: { outletId },
-    include: { allocations: allocationInclude },
-    orderBy: { label: "asc" },
-  });
+  try {
+    await checkReservationReminders(outletId).catch(() => undefined);
 
-  return NextResponse.json(tables);
+    const [tables, serviceOrders] = await Promise.all([
+    prisma.restaurantTable.findMany({
+      where: { outletId },
+      include: { allocations: allocationInclude },
+      orderBy: { label: "asc" },
+    }),
+    prisma.tableAllocation.findMany({
+      where: {
+        outletId,
+        status: { in: ["waiting", "reserved", "active"] },
+        OR: [
+          { mode: { in: ["takeaway", "waitlist", "reservation"] } },
+          { tableId: null },
+        ],
+      },
+      include: {
+        table: { select: { id: true, label: true, status: true } },
+        order: { include: { items: { orderBy: { name: "asc" } } } },
+      },
+      orderBy: [{ reservedFor: "asc" }, { startTime: "asc" }],
+    }),
+  ]);
+
+    return NextResponse.json({ tables, serviceOrders });
+  } catch (err) {
+    console.error("GET tables failed", err);
+    return NextResponse.json(
+      { error: "Failed to load tables", tables: [], serviceOrders: [] },
+      { status: 500 }
+    );
+  }
 }
 
 export async function POST(
@@ -138,9 +166,12 @@ export async function POST(
 
     const allocation = await prisma.tableAllocation.create({
       data: {
+        outletId,
         tableId: body.tableId,
         guestName: body.guestName,
         guestCount: body.guestCount ?? 2,
+        guestPhone: body.guestPhone?.trim() || null,
+        mode: "dine_in",
         status: "active",
         order: orderItems.length
           ? {
@@ -643,13 +674,412 @@ export async function POST(
     );
   }
 
-  if (action === "reserve") {
-    const table = await prisma.restaurantTable.update({
-      where: { id: body.tableId },
-      data: { status: "reserved" },
+  if (action === "create_takeaway") {
+    const guestName = (body.guestName as string | undefined)?.trim();
+    if (!guestName) {
+      return NextResponse.json({ error: "Guest name required" }, { status: 400 });
+    }
+    const orderItems = await resolveMenuItems(outletId, body.items || []);
+    if (!orderItems.length) {
+      return NextResponse.json({ error: "Add at least one menu item" }, { status: 400 });
+    }
+
+    const allocation = await prisma.tableAllocation.create({
+      data: {
+        outletId,
+        guestName,
+        guestCount: body.guestCount ?? 1,
+        guestPhone: body.guestPhone?.trim() || null,
+        mode: "takeaway",
+        status: "active",
+        order: {
+          create: {
+            items: { create: orderItems },
+            subtotal: orderSubtotal(orderItems),
+          },
+        },
+      },
+      include: { order: { include: { items: true } } },
     });
+
+    await notifyOutletMembers(
+      outletId,
+      "takeaway_order",
+      `Takeaway · ${guestName} · ${orderItems.length} item(s)`,
+      { skipBump: true }
+    );
     await bumpOutletOps(outletId);
-    return NextResponse.json(table);
+    return NextResponse.json(allocation);
+  }
+
+  if (action === "create_waitlist") {
+    const guestName = (body.guestName as string | undefined)?.trim();
+    if (!guestName) {
+      return NextResponse.json({ error: "Guest name required" }, { status: 400 });
+    }
+    const orderItems = await resolveMenuItems(outletId, body.items || []);
+
+    const allocation = await prisma.tableAllocation.create({
+      data: {
+        outletId,
+        guestName,
+        guestCount: body.guestCount ?? 2,
+        guestPhone: body.guestPhone?.trim() || null,
+        mode: "waitlist",
+        status: "waiting",
+        order: orderItems.length
+          ? {
+              create: {
+                items: { create: orderItems },
+                subtotal: orderSubtotal(orderItems),
+              },
+            }
+          : undefined,
+      },
+      include: { order: { include: { items: true } } },
+    });
+
+    await notifyOutletMembers(
+      outletId,
+      "waitlist_order",
+      `Waitlist · ${guestName} · party ${allocation.guestCount}${
+        orderItems.length ? ` · ${orderItems.length} item(s)` : ""
+      }`,
+      { skipBump: true }
+    );
+    await bumpOutletOps(outletId);
+    return NextResponse.json(allocation);
+  }
+
+  if (action === "create_reservation") {
+    const guestName = (body.guestName as string | undefined)?.trim();
+    const tableId = body.tableId as string | undefined;
+    const reservedForRaw = body.reservedFor as string | undefined;
+    if (!guestName || !tableId || !reservedForRaw) {
+      return NextResponse.json(
+        { error: "Guest name, table, and reservation time required" },
+        { status: 400 }
+      );
+    }
+    const reservedFor = new Date(reservedForRaw);
+    if (Number.isNaN(reservedFor.getTime())) {
+      return NextResponse.json({ error: "Invalid reservation time" }, { status: 400 });
+    }
+
+    const table = await prisma.restaurantTable.findFirst({
+      where: { id: tableId, outletId },
+    });
+    if (!table) return NextResponse.json({ error: "Table not found" }, { status: 404 });
+    if (table.status !== "available") {
+      return NextResponse.json({ error: "Table is not available" }, { status: 400 });
+    }
+
+    const orderItems = (await resolveMenuItems(outletId, body.items || [])).map(
+      (item) => ({
+        ...item,
+        kitchenStatus: "held",
+        sentToKitchenAt: null as Date | null,
+      })
+    );
+
+    const allocation = await prisma.tableAllocation.create({
+      data: {
+        outletId,
+        tableId,
+        guestName,
+        guestCount: body.guestCount ?? 2,
+        guestPhone: body.guestPhone?.trim() || null,
+        mode: "reservation",
+        status: "reserved",
+        reservedFor,
+        order: orderItems.length
+          ? {
+              create: {
+                items: { create: orderItems },
+                subtotal: orderSubtotal(orderItems),
+              },
+            }
+          : undefined,
+      },
+      include: {
+        table: true,
+        order: { include: { items: true } },
+      },
+    });
+
+    // Table stays available until ~15 min before reservedFor
+    await notifyOutletMembers(
+      outletId,
+      "reservation_order",
+      `Reservation · Table ${table.label} · ${guestName} · ${reservedFor.toLocaleString()}${
+        orderItems.length ? ` · ${orderItems.length} pre-ordered item(s)` : ""
+      }`,
+      { skipBump: true }
+    );
+    await bumpOutletOps(outletId);
+    return NextResponse.json(allocation);
+  }
+
+  if (action === "seat_waitlist") {
+    const allocationId = body.allocationId as string | undefined;
+    const tableId = body.tableId as string | undefined;
+    if (!allocationId || !tableId) {
+      return NextResponse.json({ error: "Waitlist entry and table required" }, { status: 400 });
+    }
+
+    const allocation = await prisma.tableAllocation.findFirst({
+      where: { id: allocationId, outletId, mode: "waitlist", status: "waiting" },
+      include: { order: { include: { items: true } } },
+    });
+    if (!allocation) {
+      return NextResponse.json({ error: "Waitlist entry not found" }, { status: 404 });
+    }
+
+    const table = await prisma.restaurantTable.findFirst({
+      where: { id: tableId, outletId },
+    });
+    if (!table) return NextResponse.json({ error: "Table not found" }, { status: 404 });
+    if (table.status !== "available") {
+      return NextResponse.json({ error: "Table is not available" }, { status: 400 });
+    }
+
+    const updated = await prisma.tableAllocation.update({
+      where: { id: allocation.id },
+      data: {
+        tableId,
+        status: "active",
+        mode: "dine_in",
+        startTime: new Date(),
+      },
+      include: {
+        table: true,
+        order: { include: { items: true } },
+      },
+    });
+
+    await prisma.restaurantTable.update({
+      where: { id: tableId },
+      data: { status: "occupied" },
+    });
+
+    // Ensure kitchen sees items as freshly sent
+    if (updated.order?.items?.length) {
+      await prisma.tableOrderItem.updateMany({
+        where: {
+          orderId: updated.order.id,
+          voided: false,
+          kitchenStatus: { not: "cancelled" },
+        },
+        data: { kitchenStatus: "pending", sentToKitchenAt: new Date() },
+      });
+    }
+
+    const itemCount = updated.order?.items?.filter((i) => !i.voided).length ?? 0;
+    await notifyOutletMembers(
+      outletId,
+      "waitlist_seated",
+      `Waitlist seated · Table ${table.label} · ${allocation.guestName}${
+        itemCount ? ` · ${itemCount} item(s) to kitchen` : ""
+      }`,
+      { skipBump: true }
+    );
+    await bumpOutletOps(outletId);
+    return NextResponse.json(updated);
+  }
+
+  if (action === "arrive_reservation") {
+    const allocation = await prisma.tableAllocation.findFirst({
+      where: {
+        id: body.allocationId,
+        outletId,
+        mode: "reservation",
+        status: "reserved",
+      },
+      include: { table: true, order: { include: { items: true } } },
+    });
+    if (!allocation) {
+      return NextResponse.json({ error: "Reservation not found" }, { status: 404 });
+    }
+
+    if (allocation.tableId) {
+      const blocking = await prisma.tableAllocation.findFirst({
+        where: {
+          tableId: allocation.tableId,
+          id: { not: allocation.id },
+          status: "active",
+        },
+        select: { guestName: true },
+      });
+      if (blocking) {
+        return NextResponse.json(
+          {
+            error: `Table still in use by ${blocking.guestName}. Clear it before seating this reservation.`,
+          },
+          { status: 400 }
+        );
+      }
+    }
+
+    const updated = await prisma.tableAllocation.update({
+      where: { id: allocation.id },
+      data: { status: "active", mode: "dine_in", startTime: new Date() },
+      include: { table: true, order: { include: { items: true } } },
+    });
+
+    if (allocation.tableId) {
+      await prisma.restaurantTable.update({
+        where: { id: allocation.tableId },
+        data: { status: "occupied" },
+      });
+    }
+
+    if (updated.order?.items?.length) {
+      await prisma.tableOrderItem.updateMany({
+        where: {
+          orderId: updated.order.id,
+          voided: false,
+          kitchenStatus: { not: "cancelled" },
+        },
+        data: { kitchenStatus: "pending", sentToKitchenAt: new Date() },
+      });
+    }
+
+    await notifyOutletMembers(
+      outletId,
+      "new_order",
+      `Reservation arrived · Table ${allocation.table?.label ?? "?"} · ${allocation.guestName}`,
+      { skipBump: true }
+    );
+    await bumpOutletOps(outletId);
+    return NextResponse.json(updated);
+  }
+
+  if (action === "cancel_service_order") {
+    const allocation = await prisma.tableAllocation.findFirst({
+      where: {
+        id: body.allocationId,
+        outletId,
+        status: { in: ["waiting", "reserved", "active"] },
+      },
+      include: { order: { include: { items: true } }, table: true },
+    });
+    if (!allocation) {
+      return NextResponse.json({ error: "Order not found" }, { status: 404 });
+    }
+
+    const endTime = new Date();
+    if (allocation.order && allocation.order.status === "open") {
+      await prisma.tableOrder.update({
+        where: { id: allocation.order.id },
+        data: {
+          status: "cancelled",
+          voidedAt: endTime,
+          closeReason: (body.reason as string | undefined)?.trim() || "cancelled",
+          closedById: actorId,
+        },
+      });
+      await prisma.tableOrderItem.updateMany({
+        where: { orderId: allocation.order.id },
+        data: { kitchenStatus: "cancelled" },
+      });
+    }
+
+    await prisma.tableAllocation.update({
+      where: { id: allocation.id },
+      data: { status: "cancelled", endTime },
+    });
+
+    if (allocation.tableId) {
+      const otherActive = await prisma.tableAllocation.findFirst({
+        where: {
+          tableId: allocation.tableId,
+          id: { not: allocation.id },
+          status: "active",
+        },
+        select: { id: true },
+      });
+      if (!otherActive) {
+        await prisma.restaurantTable.update({
+          where: { id: allocation.tableId },
+          data: { status: "available" },
+        });
+      }
+    }
+
+    await bumpOutletOps(outletId);
+    return NextResponse.json({ success: true });
+  }
+
+  if (action === "settle_service_order") {
+    const allocation = await prisma.tableAllocation.findFirst({
+      where: {
+        id: body.allocationId,
+        outletId,
+        mode: { in: ["takeaway", "waitlist"] },
+        status: { in: ["waiting", "active"] },
+      },
+      include: { order: { include: { items: true } } },
+    });
+    if (!allocation?.order || allocation.order.status !== "open") {
+      return NextResponse.json({ error: "Open service order not found" }, { status: 404 });
+    }
+    const items = allocation.order.items.filter((i) => !i.voided);
+    if (!items.length) {
+      return NextResponse.json({ error: "Add menu items before settling" }, { status: 400 });
+    }
+
+    const paidAt = new Date();
+    const subtotal = orderSubtotal(items);
+    const paymentMethod = body.paymentMethod || "cash";
+    const label = serviceLabel(allocation.mode);
+
+    const finance = await createOrderIncomeEntry({
+      outletId,
+      orderId: allocation.order.id,
+      amount: subtotal,
+      paidAt,
+      tableLabel: label,
+      guestName: allocation.guestName,
+      paymentMethod,
+      createdById: actorId,
+    });
+
+    await prisma.tableOrder.update({
+      where: { id: allocation.order.id },
+      data: {
+        status: "paid",
+        subtotal,
+        paidAt,
+        paymentMethod,
+        closedById: actorId,
+        financeEntryId: finance.id,
+      },
+    });
+    await prisma.tableAllocation.update({
+      where: { id: allocation.id },
+      data: { status: "completed", endTime: paidAt },
+    });
+    await applyOrderStockChange({
+      outletId,
+      orderId: allocation.order.id,
+      items: allocation.order.items,
+      type: "sale",
+      createdById: actorId,
+      note: `Sale · ${label}`,
+    });
+    await prisma.tableOrderItem.updateMany({
+      where: { orderId: allocation.order.id, kitchenStatus: { not: "cancelled" } },
+      data: { kitchenStatus: "cancelled" },
+    });
+
+    await notifyOutletMembers(
+      outletId,
+      "order_settled",
+      `Paid · ${label} · ${allocation.guestName}`,
+      { skipBump: true }
+    );
+    await bumpOutletOps(outletId);
+    return NextResponse.json({ success: true, finance });
   }
 
   return NextResponse.json({ error: "Unknown action" }, { status: 400 });
