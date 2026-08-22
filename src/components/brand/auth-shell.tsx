@@ -32,14 +32,14 @@ export function AuthShell({
                 <span className="text-[var(--restaurant-yellow)]">flavor</span> &amp; precision
               </h1>
               <p className="text-white/85 text-lg">
-                Menus, inventory, tables, checklists — everything your kitchen and
-                front-of-house need, in one warm &amp; lively hub.
+                Live kitchen board, synced floor, QR menus, and alerts — everything your
+                kitchen and front-of-house need in one warm hub.
               </p>
               <div className="flex gap-3 flex-wrap">
                 {[
                   { icon: "outlets" as const, label: "Multi-outlet" },
-                  { icon: "mobile" as const, label: "QR Menus" },
-                  { icon: "stock" as const, label: "Stock alerts" },
+                  { icon: "chef" as const, label: "Kitchen board" },
+                  { icon: "tables" as const, label: "Live floor" },
                 ].map((tag) => (
                   <span
                     key={tag.label}

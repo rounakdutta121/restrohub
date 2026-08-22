@@ -37,12 +37,13 @@ const policySections: { title: string; body: ReactNode }[] = [
         <p>
           <strong>Organization & outlet data:</strong> Business names, outlet addresses, cities,
           countries, currencies, timezones, menu items, prices, inventory quantities, table
-          configurations, finance entries, checklist content, and team member roles you enter into
-          the platform.
+          configurations, kitchen ticket status, finance entries, checklist content, and team
+          member roles you enter into the platform.
         </p>
         <p>
-          <strong>Operational data:</strong> Table orders, checklist run progress, notifications,
-          invite tokens, and audit-related timestamps.
+          <strong>Operational data:</strong> Table orders, kitchen board status, checklist run
+          progress, live-ops sync metadata, notifications, invite tokens, and audit-related
+          timestamps.
         </p>
         <p>
           <strong>Technical data:</strong> Standard server logs may include IP address, browser
@@ -63,7 +64,10 @@ const policySections: { title: string; body: ReactNode }[] = [
         <ul className="list-disc pl-5 space-y-2">
           <li>Provide and maintain RestoHub — dashboards, APIs, notifications, and public menus.</li>
           <li>Authenticate users and enforce role-based permissions within your organization.</li>
-          <li>Send operational notifications (low stock, overdue checklists) to the right people.</li>
+          <li>
+            Send role-based operational notifications (new kitchen orders, low stock, paid checks,
+            overdue checklists) to the right people.
+          </li>
           <li>Process invite links so new staff can join securely.</li>
           <li>Improve reliability, fix bugs, and develop new features.</li>
           <li>
@@ -80,8 +84,8 @@ const policySections: { title: string; body: ReactNode }[] = [
       <>
         <p>
           <strong>Within your organization:</strong> Data is visible to members according to their
-          role. Staff see menus and tables; managers additionally see finance; admins manage team
-          invites.
+          role. Staff see menus, tables, and the kitchen board; managers additionally see finance
+          and stock alerts; admins manage team invites.
         </p>
         <p>
           <strong>Public menus:</strong> Menu categories, item names, descriptions, and prices you

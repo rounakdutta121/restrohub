@@ -10,7 +10,7 @@ import { createPageMetadata, PAGE_KEYWORDS } from "@/lib/seo";
 export const metadata = createPageMetadata({
   title: "About RestoHub — Free Restaurant Operations Software",
   description:
-    "Learn about RestoHub: free restaurant operations software built for real kitchens — owners, cafe operators, and cloud kitchen teams who need QR menus, stock control, table orders, analytics, and staff tools without enterprise complexity.",
+    "Learn about RestoHub: free restaurant operations software with a live kitchen board, multi-device floor sync, QR menus, stock alerts, table orders, analytics, and staff tools — without enterprise complexity.",
   path: "/about",
   keywords: [...PAGE_KEYWORDS.about],
   ogImage: "/images/resto-trust.png",
@@ -23,7 +23,7 @@ const values = [
   },
   {
     title: "Clarity over complexity",
-    body: "You should not need a consultant to use your ops software. Every screen is labeled in plain language — Stock, Prep, Tables — the same words your team already uses.",
+    body: "You should not need a consultant to use your ops software. Every screen is labeled in plain language — Kitchen, Tables, Stock — the same words your team already uses.",
   },
   {
     title: "Trust through transparency",
@@ -46,17 +46,17 @@ const timeline = [
   },
   {
     year: "RestoHub",
-    text: "We built one hub — outlets, QR menus, inventory, tables with orders, checklists, finance, team roles — so operators finally have a single place to run the house.",
+    text: "We built one hub — live kitchen board, synced floor, QR menus, inventory, checklists, finance, team roles — so operators finally have a single place to run the house.",
   },
   {
     year: "Today",
-    text: "RestoHub grows with every outlet you add. Start free, invite your crew, and run every location from one hub — no paid packs for this release.",
+    text: "RestoHub grows with every outlet you add. Floor and kitchen stay live across devices. Start free, invite your crew — no paid packs for this release.",
   },
 ];
 
 const trustItems = [
   "Invite-only access — strangers cannot browse your dashboard.",
-  "Role-based security — staff cannot see finance or delete menus.",
+  "Role-based security — staff cannot see finance; alerts follow the same hierarchy.",
   "Outlet-scoped data — Kolkata stock does not mix with Mumbai stock.",
   "Owner protection — organization creator cannot be removed by mistake.",
   "Clear privacy policy — we tell you exactly what we store.",
@@ -119,8 +119,8 @@ export default function AboutPage() {
                 low stock before service, guests never hear &ldquo;sorry, that&apos;s finished.&rdquo;
               </p>
               <p className="text-[var(--restaurant-brown)]/70 leading-relaxed text-base sm:text-lg">
-                That is why we integrated menus, stock, tables, tasks, money, and people into one
-                product instead of selling you ten integrations.
+                That is why we integrated kitchen tickets, floor sync, menus, stock, tasks, money,
+                and people into one product instead of selling you ten integrations.
               </p>
             </div>
             <div className="relative aspect-[4/5] sm:aspect-[5/4] lg:aspect-[4/5] rounded-[1.75rem] overflow-hidden shadow-2xl ring-1 ring-[var(--restaurant-brown)]/10">

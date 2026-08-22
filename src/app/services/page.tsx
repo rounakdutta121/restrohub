@@ -8,9 +8,9 @@ import { SITE_CONTACT } from "@/lib/site-content";
 import { createPageMetadata, PAGE_KEYWORDS } from "@/lib/seo";
 
 export const metadata = createPageMetadata({
-  title: "Restaurant Software Features — QR Menus, Stock, Tables & Analytics",
+  title: "Restaurant Software Features — Kitchen Board, Live Sync, QR Menus",
   description:
-    "Explore RestoHub features: multi-outlet restaurant management, QR digital food menus, kitchen inventory & low-stock alerts, table seating & paid orders, prep checklists, F&B finance, owner analytics, and role-based staff tools — free for food outlets.",
+    "Explore RestoHub features: live kitchen board, multi-device table sync, role-based alerts, QR digital menus, inventory, prep checklists, F&B finance, analytics, and staff tools — free for food outlets.",
   path: "/services",
   keywords: [...PAGE_KEYWORDS.services],
   ogImage: "/images/resto-operations.png",
@@ -57,7 +57,7 @@ const services: {
     details: [
       "Define ingredients once (flour, oil, paneer) with units like kg or litres.",
       "Set current stock and minimum levels per outlet independently.",
-      "Low-stock notifications appear in the bell icon and Notifications page.",
+      "Low-stock alerts go to managers (and above) via the bell and Notifications page.",
       "Prevents last-minute runs to the market during Friday night rush.",
     ],
     who: "Managers update stock. Staff can view levels for awareness.",
@@ -92,14 +92,40 @@ const services: {
     icon: "tables",
     title: "Table allocation & orders",
     summary:
-      "Visual table board for your floor. Seat guests, take orders from your live menu, add items mid-meal, and free tables when done.",
+      "Visual floor board that stays live across phones and tablets. Seat guests, search the menu, add items mid-meal, settle & pay — or cancel / walkout without counting income.",
     details: [
       "Define tables with labels (T1, Patio 4) and seat capacity.",
-      "Seat guests with name and party size; optionally add menu items to the order.",
-      "Occupied tables show order summary and total in outlet currency.",
-      "Staff add or remove line items; managers configure the table layout.",
+      "Seat guests with name and party size; search the live menu when ordering.",
+      "Kitchen status badges on line items; totals in outlet currency.",
+      "Settle & pay, cancel, walkout, or comp — mistake-safe closes for real service.",
     ],
     who: "Managers set up tables. Staff seat guests and manage orders.",
+  },
+  {
+    icon: "chef",
+    title: "Live kitchen board",
+    summary:
+      "A ticket board for the pass. New items appear within seconds — move them pending → preparing → ready without leaving the kitchen tablet.",
+    details: [
+      "Filter by pending, preparing, or ready so the line stays focused.",
+      "New-order toast when fresh tickets land while the tab is open.",
+      "Cancel or advance items; floor boards reflect kitchen status live.",
+      "Built for a wall tablet — polls only while the kitchen tab is visible.",
+    ],
+    who: "Kitchen and floor staff. Managers supervise during rush.",
+  },
+  {
+    icon: "sparkle",
+    title: "Live ops sync",
+    summary:
+      "One outlet pulse for the whole dashboard. When someone seats a table or updates stock, every open board refreshes — no full page reload.",
+    details: [
+      "Shared live pulse for Home, Tables, Kitchen, Inventory, Finance, and more.",
+      "Works across devices on the same outlet — phone, POS tablet, kitchen screen.",
+      "Quiet when the browser tab is hidden; resumes when you come back.",
+      "Pairs with role-based alerts so the right people hear about changes.",
+    ],
+    who: "Everyone on the selected outlet benefits automatically.",
   },
   {
     icon: "finance",
@@ -107,10 +133,10 @@ const services: {
     summary:
       "Simple income and expense tracking per outlet, per month — in INR, USD, or whatever currency the outlet uses.",
     details: [
-      "Log sales, rent, utilities, salaries, ingredients, and misc entries.",
+      "Paid table checks create income entries automatically.",
+      "Log rent, utilities, salaries, ingredients, and misc expenses by hand.",
       "Monthly income, expense, and profit summary cards.",
-      "Home dashboard shows org-wide or outlet-scoped finance for managers.",
-      "Manual ledger today — clarity without accounting complexity.",
+      "Home and Analytics stay live when the floor settles a bill.",
     ],
     who: "Managers and above. Hidden from floor staff for privacy.",
   },
@@ -131,14 +157,14 @@ const services: {
     icon: "bell",
     title: "Notifications hub",
     summary:
-      "One inbox for operational alerts — low stock, overdue checklists, maintenance due — so managers react before guests notice.",
+      "One inbox that follows role hierarchy — kitchen orders for staff, stock and paid checks for managers, checklist due for assignees.",
     details: [
-      "Personal notifications per user account.",
-      "Mark read, mark all read, or clear individually.",
-      "Tied to outlet context where relevant.",
-      "Reduces reliance on WhatsApp groups for operational chatter.",
+      "Personal notifications per user account, scoped to outlets they can access.",
+      "Tap an alert to jump to Kitchen, Inventory, Finance, or Runs.",
+      "Low-stock alerts are deduped so the bell does not spam.",
+      "Live unread badge updates while you work — no reload required.",
     ],
-    who: "All logged-in users receive relevant alerts.",
+    who: "Staff get floor/kitchen pings. Managers get stock & finance. Assignees get checklist due.",
   },
   {
     icon: "settings",
@@ -200,8 +226,8 @@ export default function ServicesPage() {
           <p className="text-[var(--restaurant-brown)]/70 leading-relaxed mb-4 text-base sm:text-lg">
             Most restaurants stitch together WhatsApp, Excel, printed menus, and memory. RestoHub
             replaces that patchwork with integrated modules that share the same outlets, team, and
-            menu data — so when a manager marks butter chicken unavailable, your QR menu, table
-            orders, and stock view all stay aligned.
+            menu data — so when floor seats a table, the kitchen board lights up, and when stock dips
+            low, managers get the alert — all without a refresh.
           </p>
           <p className="text-[var(--restaurant-brown)]/70 leading-relaxed text-base sm:text-lg">
             You can adopt one module at a time — start with QR menus, add stock when ready — but
@@ -219,7 +245,7 @@ export default function ServicesPage() {
               Everything you get
             </h2>
             <p className="text-white/60 text-base sm:text-lg">
-              Ten connected services — free during this release.
+              Connected modules — including kitchen board and live sync — free this release.
             </p>
           </div>
 

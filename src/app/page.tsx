@@ -10,7 +10,7 @@ import { createPageMetadata, PAGE_KEYWORDS } from "@/lib/seo";
 export const metadata = createPageMetadata({
   title: "Free Restaurant Management Software & QR Digital Menus",
   description:
-    "RestoHub is free restaurant management software for restaurants, cafes, dhabas & cloud kitchens — multi-outlet dashboards, QR food menus, kitchen inventory, table orders, prep checklists, staff roles, finance & analytics. Start free, no card needed.",
+    "RestoHub is free restaurant management software for restaurants, cafes, dhabas & cloud kitchens — live kitchen board, multi-device floor sync, QR menus, inventory alerts, table orders, checklists, finance & analytics. Start free, no card needed.",
   path: "/",
   keywords: [...PAGE_KEYWORDS.home],
   ogImage: "/images/resto-hero.png",
@@ -28,32 +28,32 @@ const features: { icon: RestoIconName; title: string; desc: string }[] = [
     desc: "Beautiful mobile menus per outlet. Guests scan and see live prices in INR, USD, and more.",
   },
   {
-    icon: "stock",
-    title: "Stock & low-stock alerts",
-    desc: "Track ingredients per outlet, set reorder levels, and get notified before the kitchen runs dry.",
-  },
-  {
-    icon: "prep",
-    title: "Kitchen checklists",
-    desc: "Prep, opening, closing, and maintenance SOPs with assignable runs and compliance tracking.",
+    icon: "chef",
+    title: "Live kitchen board",
+    desc: "Pending, preparing, ready — tickets land on a kitchen tablet the moment floor staff send items.",
   },
   {
     icon: "tables",
-    title: "Tables & in-house orders",
-    desc: "Seat guests, take orders from your live menu, and free tables when service is done.",
+    title: "Tables that stay in sync",
+    desc: "Seat, search the menu, add items, settle or walk out — the floor board updates across devices in seconds.",
+  },
+  {
+    icon: "bell",
+    title: "Role-based alerts",
+    desc: "Kitchen orders to staff, stock & paid checks to managers — the right people get the right ping.",
   },
   {
     icon: "finance",
-    title: "Finance per outlet",
-    desc: "Log income and expenses in the outlet currency. See monthly profit at a glance.",
+    title: "Finance that follows the floor",
+    desc: "Paid tables count as income automatically. Track expenses and profit per outlet currency.",
   },
 ];
 
 const advantages = [
   "Replace spreadsheets, WhatsApp groups, and paper checklists with one system.",
-  "Staff take table orders from the menu you already maintain — no double entry.",
+  "Floor and kitchen stay live — no reload, no shouting across the pass.",
+  "Staff take table orders from the menu you already maintain — search included.",
   "Managers see finance and stock; staff focus on service — permissions built in.",
-  "Multi-outlet groups share one team, one invite system, one source of truth.",
   "QR menus update instantly when you change prices — no reprinting.",
   "Built for Indian restaurants and global chains — INR formatting, local support.",
 ];
@@ -86,8 +86,8 @@ export default function HomePage() {
               <span className="text-[var(--restaurant-yellow)]">Delight every guest.</span>
             </h1>
             <p className="text-base sm:text-lg lg:text-xl text-white/80 mb-8 sm:mb-10 max-w-xl leading-relaxed">
-              QR menus, inventory, table orders, checklists, finance, and your whole team —
-              in one warm hub built for real kitchens.
+              Live kitchen board, synced table floor, QR menus, stock alerts, finance, and your
+              whole team — in one warm hub built for real kitchens.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
               <Link href="/signup" className="w-full sm:w-auto">
@@ -109,11 +109,11 @@ export default function HomePage() {
               </Link>
             </div>
             <div className="mt-10 sm:mt-14 flex flex-wrap gap-x-6 gap-y-2 text-xs sm:text-sm text-white/55">
-              <span>Unlimited outlets</span>
+              <span>Live kitchen board</span>
               <span className="hidden sm:inline text-white/25">·</span>
-              <span>QR digital menus</span>
+              <span>Multi-device sync</span>
               <span className="hidden sm:inline text-white/25">·</span>
-              <span>INR-ready</span>
+              <span>QR menus · INR-ready</span>
             </div>
           </div>
         </div>
@@ -159,7 +159,7 @@ export default function HomePage() {
                   Live ops
                 </p>
                 <p className="resto-heading text-sm font-bold text-[var(--restaurant-brown)] mt-0.5">
-                  Menus · Stock · Tables
+                  Kitchen · Floor · Alerts
                 </p>
               </div>
             </div>
@@ -202,7 +202,7 @@ export default function HomePage() {
 
           <div className="mt-10 sm:mt-12 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between rounded-2xl border border-white/10 bg-white/[0.04] px-5 py-5 sm:px-8">
             <p className="text-white/75 text-sm sm:text-base">
-              Team roles, smart alerts, and unlimited growth — all included free.
+              Kitchen board, live sync, role alerts, and unlimited growth — all free.
             </p>
             <Link href="/services">
               <Button
@@ -345,7 +345,7 @@ export default function HomePage() {
                 Your kitchen deserves better tools
               </h2>
               <p className="text-white/75 mb-7 max-w-lg mx-auto text-sm sm:text-base leading-relaxed">
-                Replace chaos with clarity — and give guests a smoother experience.
+                Floor and kitchen on the same pulse — so guests get a smoother experience.
               </p>
               <Link href="/signup">
                 <Button

@@ -60,14 +60,16 @@ export const PAGE_KEYWORDS = {
   home: [
     "best free restaurant software 2026",
     "restaurant management app free",
+    "live kitchen board software",
+    "multi device restaurant sync",
     "all in one restaurant software",
-    "restaurant dashboard software",
     "food business software India",
   ],
   services: [
     "restaurant QR menu service",
-    "kitchen inventory software",
+    "live kitchen display system",
     "restaurant table order system",
+    "kitchen inventory software",
     "food service checklist app",
     "multi location restaurant tools",
     "restaurant stock alert system",
@@ -76,7 +78,7 @@ export const PAGE_KEYWORDS = {
   about: [
     "restaurant software company India",
     "about RestoHub",
-    "food service operations platform",
+    "live restaurant operations platform",
     "trusted restaurant management software",
     "kitchen operations software India",
   ],
@@ -401,22 +403,27 @@ export const HOME_FAQS = [
   {
     question: "What is RestoHub restaurant management software?",
     answer:
-      "RestoHub is a free all-in-one restaurant operations platform for multi-outlet food businesses. It includes QR digital menus, kitchen inventory tracking, table seating and orders, prep checklists, staff role management, finance, and analytics — built for restaurants, cafes, dhabas, and cloud kitchens.",
+      "RestoHub is a free all-in-one restaurant operations platform for multi-outlet food businesses. It includes a live kitchen board, multi-device floor sync, QR digital menus, inventory alerts, table seating and orders, prep checklists, staff roles, finance, and analytics — built for restaurants, cafes, dhabas, and cloud kitchens.",
   },
   {
-    question: "Does RestoHub support QR code menus for restaurants?",
+    question: "Does the kitchen board update live?",
     answer:
-      "Yes. Each outlet gets a public mobile-friendly food menu page and a downloadable QR code. When you update menu items or prices, guests see changes instantly without reprinting menus.",
+      "Yes. When floor staff seat a table or add items, tickets appear on the kitchen board within a few seconds while the tab is open — no full page reload. Status moves pending → preparing → ready on a kitchen tablet.",
   },
   {
-    question: "Can I manage multiple restaurant outlets in one account?",
+    question: "Can multiple devices stay in sync?",
     answer:
-      "Yes. RestoHub supports multi-outlet organizations with a single team, invite system, and dashboard. Switch between locations in one click while keeping stock, menus, tables, and finance scoped per outlet.",
+      "Yes. Phones, POS tablets, and kitchen screens on the same outlet share one live pulse for tables, kitchen, inventory, finance, and alerts — so the floor and pass stay aligned.",
+  },
+  {
+    question: "Who receives notifications?",
+    answer:
+      "Alerts follow role hierarchy: staff get new kitchen orders, managers get low-stock and paid-check alerts, and checklist assignees get due reminders. The bell updates live without a reload.",
   },
   {
     question: "Is RestoHub free for restaurants?",
     answer:
-      "Yes. For this initial release RestoHub is completely free — unlimited outlets, staff, menu items, and checklists. No payment, packs, or upgrades required.",
+      "Yes. This release is completely free — unlimited outlets, staff, menus, checklists, kitchen board, and live sync. No payment, packs, or upgrades required.",
   },
   {
     question: "Does RestoHub work for Indian restaurants with INR pricing?",
